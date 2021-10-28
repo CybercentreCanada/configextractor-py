@@ -1,0 +1,375 @@
+Azorult:
+  description: Extracts uri in Azorult (information stealer) payload
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: "S0344"
+  malware: "Azorult"
+  malware_type:
+    - "Banker"
+  run_on: "OR"
+  selector:
+    yara_rule: # Must not have empty or nonexistent fields
+      - ./yara_rules/azorult.yara
+  parser:
+    - MWCP:
+        - Azorult
+BitPaymer:
+  description: BitPaymer ransomware parser, extracts rsa key and strings
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: ""
+  malware: "BitPaymer"
+  malware_type:
+    - "Ransomware"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/bitpaymer.yara
+  parser:
+    - MWCP:
+        - BitPaymer
+BuerLoader:
+  description: Malware loader
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: ""
+  malware: "BitPaymer"
+  malware_type:
+    - "Loader"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/buerloader.yara
+  parser:
+    - MWCP:
+        - BuerLoader
+ChChes:
+  description: Extracts config data from various ChChes trojan families
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: "S0144"
+  malware: "ChChes"
+  malware_type:
+    - "Trojan"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/chches.yara
+  parser:
+    - MWCP:
+        - ChChes
+DoppelPaymer:
+  description: DoppelPaymer ransomware config data parser, gets rsa keys and strings
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: ""
+  malware: "DoppelPaymer"
+  malware_type:
+    - "Ransomware"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/doppelpaymer.yara
+  parser:
+    - MWCP:
+        - DoppelPaymer
+DridexLoader:
+  description: Banking Trojan that uses Microsoft word macros
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: "S0384"
+  malware: "DridexLoader"
+  malware_type:
+    - "Banker"
+    - "Loader"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/dridexloader.yara
+  parser:
+    - MWCP:
+        - DridexLoader
+Emotet:
+  description: Emotet malware family parser and yara rules for both payload and assemblyline tags
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: "CRIMEWARE"
+  mitre_att: "S0367"
+  malware: "Emotet"
+  malware_type:
+    - "Banker"
+    - "Loader"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/emotet.yara
+    tag:
+      - ./tag_rules/emotet.rule
+  parser:
+    - MWCP:
+        - Emotet
+
+Enfal:
+  description: Extracts config data from Enfal backdoor, yara rule detects Enfal configuration blob
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: ""
+  malware: "Enfal"
+  malware_type:
+    - "Backdoor"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/enfal.yara
+  parser:
+    - MWCP:
+        - Enfal
+EvilGrab:
+  description: Yara rule detects 3 different variants of EvilGrab ,  parser extracts config data
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: "S0152"
+  malware: "EvilGrab"
+  malware_type:
+    - "Obfuscator"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/evilgrab.yara
+  parser:
+    - MWCP:
+        - EvilGrab
+HttpBrowser:
+  description: Yara rule runs on HttpBrowser C2 connect function and HttpBrowser parser extracts configuration
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: "S0070"
+  malware: "HttpBrowser"
+  malware_type:
+    - "Rat"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/httpbrowser.yara
+  parser:
+    - MWCP:
+        - HttpBrowser
+Hancitor:
+  description: Trojan that targets windows platform and drops PONY and VAWTRAK
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: "S0499"
+  malware: "Hancitor"
+  malware_type:
+    - "Trojan"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/hancitor.yara
+  parser:
+    - MWCP:
+        - Hancitor
+IcedID:
+  description: Yara rule match runs IcedID banking trojan parser
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: "S0483"
+  malware: "IcedID"
+  malware_type:
+    - "Banker"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/icedid.yara
+  parser:
+    - MWCP:
+        - IcedID
+IcedIDStage1:
+  description: Yara rule match runs IcedID banking trojan parser
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: "S0483"
+  malware: "IcedID"
+  malware_type:
+    - "Banker"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/icedidstage1.yara
+  parser:
+    - MWCP:
+        - IcedIDStage1
+IcedIDStage2:
+  description: Yara rule match runs IcedID banking trojan parser
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: "S0483"
+  malware: "IcedID"
+  malware_type:
+    - "Banker"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/icedidstage2.yara
+  parser:
+    - MWCP:
+        - IcedIDStage2
+Loki:
+  description: Yara rule match runs Lokibot
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: "S0447"
+  malware: "Loki"
+  malware_type:
+    - "Trojan"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/loki.yara
+  parser:
+    - MWCP:
+        - Loki
+RCSession:
+  description: Yara rule match on RCSession RAT payload runs parser
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: ""
+  malware: "RCSession"
+  malware_type:
+    - "Rat"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/rcsession.yara
+  parser:
+    - MWCP:
+        - RCSession
+RedLeaf:
+  description: Yara rule match on Redleaves malware runs parser to extract c2 data
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: "S0153"
+  malware: "RedLeaf"
+  malware_type:
+    - "Rat"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/redleaf.yara
+  parser:
+    - MWCP:
+        - RedLeaf
+Redsip:
+  description: Yara rule match on Redsip payload runs parser to extract config data
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: ""
+  malware: "Redsip"
+  malware_type:
+    - "Rat"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/redsip.yara
+  parser:
+    - MWCP:
+        - Redsip
+Retefe:
+  description: Banking trojan. yara rule match on payload runs parser
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: ""
+  malware: "Retefe"
+  malware_type:
+    - "Banker"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/retefe.yara
+  parser:
+    - MWCP:
+        - Retefe
+Remcos:
+  description:
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: ""
+  malware: "Remcos"
+  malware_type:
+    - "Banker"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/remcos.yara
+  parser:
+    - MWCP:
+        - Remcos
+SmokeLoader:
+  description: Malware loader. Yara rule match extracts c2 information
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: "S0226"
+  malware: "SmokeLoader"
+  malware_type:
+    - "Downloader"
+    - "Trojan"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/smokeloader.yara
+  parser:
+    - MWCP:
+        - SmokeLoader
+QakBot:
+  description: Prevalent Information stealing banking trojan
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: ""
+  malware: "QakBot"
+  malware_type:
+    - "Banker"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/qakbot.yara
+  parser:
+    - MWCP:
+        - QakBot
+Zloader:
+  description: Zeus malware payload
+  classification: "TLP:W"
+  category: "MALWARE"
+  mitre_group: ""
+  mitre_att: ""
+  malware: "Zloader"
+  malware_type:
+    - "Banker"
+    - "Trojan"
+  run_on: "OR"
+  selector:
+    yara_rule:
+      - ./yara_rules/zloader.yara
+  parser:
+    - MWCP:
+        - Zloader

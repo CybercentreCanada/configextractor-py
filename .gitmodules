@@ -1,0 +1,3 @@
+[submodule "dependencies/mwcfg-modules"]
+	path = dependencies/mwcfg-modules
+	url = https://github.com/c3rb3ru5d3d53c/mwcfg-modules.git
