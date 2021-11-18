@@ -1,4 +1,6 @@
 # ConfigExtractor
+Maintainer: @cccs-rs
+
 Python Library for ConfigExtractor
 
 To ensure you get all the required modules OOB, be sure to perform a:
