@@ -1,3 +1,4 @@
+from collections import defaultdict
 import os
 import sys
 import json
@@ -38,6 +39,8 @@ def process_file(file_info):
         module.get_config()
         conf = module.config
         logger.info("  [-] Config Output\n")
+        if not conf:
+            conf = defaultdict(lambda: '')
         for k, v in conf.items():
             if isinstance(v, bytes):
                 try:
