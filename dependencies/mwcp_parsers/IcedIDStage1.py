@@ -21,7 +21,7 @@ import os
 import struct
 import pefile
 import yara
-from Crypto.Cipher import ARC4
+from Cryptodome.Cipher import ARC4
 from mwcp.parser import Parser
 
 
@@ -34,6 +34,7 @@ def yara_scan(raw_data):
     except Exception as e:
         print(e)
 
+
 def decode_stage1_config(data):
     out = ""
     for i in range(len(data)//2):
@@ -43,9 +44,10 @@ def decode_stage1_config(data):
         t2 = t2 >> 4
         t1 |= t2
         t1 ^= (i & 0xff)
-        out += chr(t1&0xff)
+        out += chr(t1 & 0xff)
 
     return out
+
 
 def parse_stage_1_domains(data):
     fakes = []
@@ -63,7 +65,8 @@ def parse_stage_1_domains(data):
         t = t[next:]
         (next, f) = struct.unpack_from(b'<BB', bytearray(t.encode()))
 
-    return(fakes,real)
+    return(fakes, real)
+
 
 def rol(a, i):
     a &= 0xFFFFFFFF
@@ -93,8 +96,9 @@ def iced_decode(data, key, l):
     output = ""
     for i in range(l):
         key = key_shift(key)
-        output += chr(struct.unpack("B", data[i : i + 1])[0] ^ (key & 0xFF))
+        output += chr(struct.unpack("B", data[i: i + 1])[0] ^ (key & 0xFF))
     return output
+
 
 def new_decode(data):
     n = 0
@@ -108,6 +112,7 @@ def new_decode(data):
     gads, d = struct.unpack("I30s", bytes(new))
     hostname = d.split(b"\00")[0]
     return hostname
+
 
 class IcedIDStage1(Parser):
 
@@ -125,13 +130,13 @@ class IcedIDStage1(Parser):
                     if section.Name == b'.rdata\x00\x00':
                         config_section = bytearray(section.get_data())
                         cfg = decode_stage1_config(config_section[256:])
-                        (f,r) = parse_stage_1_domains(cfg)
+                        (f, r) = parse_stage_1_domains(cfg)
                         if r:
                             for cnc in r:
-                                self.reporter.add_metadata("other", {"CNC": cnc })
+                                self.reporter.add_metadata("other", {"CNC": cnc})
                             if f:
                                 for decoy in f:
-                                    self.reporter.add_metadata("other", {"Decoy": decoy })
+                                    self.reporter.add_metadata("other", {"Decoy": decoy})
                     elif section.Name == b'.data\x00\x00\x00':
                         config_section = bytearray(section.get_data())
                         cfg = new_decode(config_section)

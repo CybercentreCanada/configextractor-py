@@ -18,7 +18,7 @@ import string
 import pefile
 import yara
 import re
-from Crypto.Cipher import ARC4
+from Cryptodome.Cipher import ARC4
 import logging
 log = logging.getLogger(__name__)
 
@@ -41,13 +41,16 @@ MAX_STRING_SIZE = 32
 
 yara_rules = yara.compile(source=rule_source)
 
+
 def decrypt_rc4(key, data):
     cipher = ARC4.new(key)
     return cipher.decrypt(data)
 
+
 def string_from_offset(data, offset):
-    string = data[offset : offset + MAX_STRING_SIZE].split(b"\0")[0]
+    string = data[offset: offset + MAX_STRING_SIZE].split(b"\0")[0]
     return string
+
 
 class Zloader(Parser):
 
@@ -67,9 +70,9 @@ class Zloader(Parser):
             for item in match.strings:
                 if '$decrypt_conf' in item[1]:
                     decrypt_conf = int(item[0])+21
-        va = struct.unpack("I",filebuf[decrypt_conf:decrypt_conf+4])[0]
+        va = struct.unpack("I", filebuf[decrypt_conf:decrypt_conf+4])[0]
         key = string_from_offset(filebuf, pe.get_offset_from_rva(va-image_base))
-        data_offset = pe.get_offset_from_rva(struct.unpack("I",filebuf[decrypt_conf+5:decrypt_conf+9])[0]-image_base)
+        data_offset = pe.get_offset_from_rva(struct.unpack("I", filebuf[decrypt_conf+5:decrypt_conf+9])[0]-image_base)
         enc_data = filebuf[data_offset:].split(b"\0\0")[0]
         raw = decrypt_rc4(key, enc_data)
         items = list(filter(None, raw.split(b'\x00\x00')))

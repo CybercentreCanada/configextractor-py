@@ -16,7 +16,7 @@ from mwcp.parser import Parser
 import string
 import pefile
 import yara
-from Crypto.Cipher import ARC4
+from Cryptodome.Cipher import ARC4
 
 rule_source = '''
 rule DoppelPaymer
@@ -37,15 +37,18 @@ rule DoppelPaymer
 
 LEN_BLOB_KEY = 40
 
+
 def convert_char(c):
     if c in (string.letters + string.digits + string.punctuation + " \t\r\n"):
         return c
     else:
         return "\\x%02x" % ord(c)
 
+
 def decrypt_rc4(key, data):
     cipher = ARC4.new(key)
     return cipher.decrypt(data)
+
 
 def yara_scan(raw_data, rule_name):
     addresses = {}
@@ -58,11 +61,13 @@ def yara_scan(raw_data, rule_name):
                     addresses[item[1]] = item[0]
                     return addresses
 
+
 def extract_rdata(pe):
     for section in pe.sections:
         if '.rdata' in section.Name:
             return section.get_data(section.VirtualAddress, section.SizeOfRawData)
     return None
+
 
 class DoppelPaymer(Parser):
 

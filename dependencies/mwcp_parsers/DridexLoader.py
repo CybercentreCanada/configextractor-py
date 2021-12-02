@@ -18,7 +18,7 @@ import string
 import socket
 import pefile
 import yara
-from Crypto.Cipher import ARC4
+from Cryptodome.Cipher import ARC4
 from mwcp.parser import Parser
 
 rule_source = '''
@@ -51,15 +51,18 @@ LEN_BOT_KEY = 107
 
 yara_rules = yara.compile(source=rule_source)
 
+
 def decrypt_rc4(key, data):
     cipher = ARC4.new(key)
     return cipher.decrypt(data)
+
 
 def extract_rdata(pe):
     for section in pe.sections:
         if b'.rdata' in section.Name:
             return section.get_data(section.VirtualAddress, section.SizeOfRawData)
     return None
+
 
 class DridexLoader(Parser):
 
@@ -92,22 +95,22 @@ class DridexLoader(Parser):
                     rc4_decode = int(item[0])
 
         if line == "$c2parse_6":
-            c2_rva = struct.unpack("i", filebuf[c2va_offset + 44 : c2va_offset + 48])[0] - image_base
-            botnet_rva = struct.unpack("i", filebuf[c2va_offset - 7 : c2va_offset - 3])[0] - image_base
+            c2_rva = struct.unpack("i", filebuf[c2va_offset + 44: c2va_offset + 48])[0] - image_base
+            botnet_rva = struct.unpack("i", filebuf[c2va_offset - 7: c2va_offset - 3])[0] - image_base
             num_ips_rva = c2_rva - 1
         elif line == "$c2parse_5":
-            c2_rva = struct.unpack("i", filebuf[c2va_offset + 75 : c2va_offset + 79])[0] - image_base
-            botnet_rva = struct.unpack("i", filebuf[c2va_offset + 3 : c2va_offset + 7])[0] - image_base
-            num_ips_rva = struct.unpack("i", filebuf[c2va_offset + 18 : c2va_offset + 22])[0] - image_base
+            c2_rva = struct.unpack("i", filebuf[c2va_offset + 75: c2va_offset + 79])[0] - image_base
+            botnet_rva = struct.unpack("i", filebuf[c2va_offset + 3: c2va_offset + 7])[0] - image_base
+            num_ips_rva = struct.unpack("i", filebuf[c2va_offset + 18: c2va_offset + 22])[0] - image_base
         elif line == "$c2parse_4":
-            c2_rva = struct.unpack("i", filebuf[c2va_offset + 6 : c2va_offset + 10])[0] - image_base + 1
+            c2_rva = struct.unpack("i", filebuf[c2va_offset + 6: c2va_offset + 10])[0] - image_base + 1
         elif line == "$c2parse_3":
-            c2_rva = struct.unpack("i", filebuf[c2va_offset + 60 : c2va_offset + 64])[0] - image_base
+            c2_rva = struct.unpack("i", filebuf[c2va_offset + 60: c2va_offset + 64])[0] - image_base
             delta = 2
         elif line == "$c2parse_2":
-            c2_rva = struct.unpack("i", filebuf[c2va_offset + 47 : c2va_offset + 51])[0] - image_base
+            c2_rva = struct.unpack("i", filebuf[c2va_offset + 47: c2va_offset + 51])[0] - image_base
         elif line == "$c2parse_1":
-            c2_rva = struct.unpack("i", filebuf[c2va_offset + 27 : c2va_offset + 31])[0] - image_base
+            c2_rva = struct.unpack("i", filebuf[c2va_offset + 27: c2va_offset + 31])[0] - image_base
             delta = 2
         else:
             return
@@ -116,12 +119,12 @@ class DridexLoader(Parser):
 
         if num_ips_rva:
             num_ips_offset = pe.get_offset_from_rva(num_ips_rva)
-            num_ips = struct.unpack("B", filebuf[num_ips_offset : num_ips_offset + 1])[0]
+            num_ips = struct.unpack("B", filebuf[num_ips_offset: num_ips_offset + 1])[0]
 
         for i in range(0, num_ips):
-            ip = struct.unpack(">I", filebuf[c2_offset : c2_offset + 4])[0]
+            ip = struct.unpack(">I", filebuf[c2_offset: c2_offset + 4])[0]
             c2_address = socket.inet_ntoa(struct.pack("!L", ip))
-            port = str(struct.unpack("H", filebuf[c2_offset + 4 : c2_offset + 6])[0])
+            port = str(struct.unpack("H", filebuf[c2_offset + 4: c2_offset + 6])[0])
 
             if c2_address and port:
                 self.reporter.add_metadata("address", c2_address + ":" + port)
@@ -137,9 +140,11 @@ class DridexLoader(Parser):
             if rc4_rva:
                 rc4_offset = pe.get_offset_from_rva(rc4_rva)
                 if not zb:
-                    raw = decrypt_rc4(filebuf[rc4_offset:rc4_offset+LEN_BLOB_KEY][::-1], filebuf[rc4_offset+LEN_BLOB_KEY:rc4_offset+LEN_BOT_KEY])
+                    raw = decrypt_rc4(filebuf[rc4_offset: rc4_offset + LEN_BLOB_KEY][:: -1],
+                                      filebuf[rc4_offset + LEN_BLOB_KEY: rc4_offset + LEN_BOT_KEY])
                 else:
-                    raw = decrypt_rc4(filebuf[rc4_offset:rc4_offset+LEN_BLOB_KEY], filebuf[rc4_offset+LEN_BLOB_KEY:rc4_offset+LEN_BOT_KEY])
+                    raw = decrypt_rc4(filebuf[rc4_offset:rc4_offset+LEN_BLOB_KEY],
+                                      filebuf[rc4_offset+LEN_BLOB_KEY:rc4_offset+LEN_BOT_KEY])
                 for item in raw.split(b"\x00"):
                     if len(item) == LEN_BLOB_KEY-1:
                         self.reporter.add_metadata('other', {'RC4 key': item.split(b';')[0]})

@@ -18,7 +18,7 @@ a wrapper for popular malware configuration data decoders from:
 ### Setup YARA
 ```bash
 sudo apt-get update && sudo apt-get install -y git libssl-dev libmagic-dev automake libtool make gcc wget libjansson-dev pkg-config
-export YARA_VERSION=4.1.0
+export YARA_VERSION=4.1.3
 wget -O /tmp/yara.tar.gz https://github.com/VirusTotal/yara/archive/v${YARA_VERSION}.tar.gz
 tar -zxf /tmp/yara.tar.gz -C /tmp
 cd /tmp/yara-${YARA_VERSION}
@@ -26,6 +26,7 @@ cd /tmp/yara-${YARA_VERSION}
 ./configure --enable-magic --enable-dotnet --with-crypto --prefix /tmp/yara_install
 make
 make install
+pip install  --global-option="build" --global-option="--enable-dotnet" --global-option="--enable-magic" yara-python==$YARA_VERSION
 ```
 
 ### Install (modified) RATDecoder from kevthehermit and ConfigExtractor CLI
