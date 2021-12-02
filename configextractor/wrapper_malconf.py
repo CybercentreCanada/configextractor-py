@@ -38,6 +38,12 @@ def process_file(file_info):
         module.get_config()
         conf = module.config
         logger.info("  [-] Config Output\n")
+        for k, v in conf.items():
+            if isinstance(v, bytes):
+                try:
+                    conf[k] = v.decode()
+                except UnicodeDecodeError:
+                    conf[k] = str(v)[2:-1]
         json_config = json.dumps(conf, indent=4, sort_keys=True)
         logger.info(json_config)
         return conf
