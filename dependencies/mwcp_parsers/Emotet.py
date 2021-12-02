@@ -18,8 +18,8 @@ import socket
 import pefile
 import yara
 import re
-from Crypto.Util import asn1
-from Crypto.PublicKey import RSA
+from Cryptodome.Util import asn1
+from Cryptodome.PublicKey import RSA
 from itertools import cycle
 
 rule_source = """

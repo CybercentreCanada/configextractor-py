@@ -21,7 +21,7 @@ setup(
         'pefile',
         'pbkdf2',
         'javaobj-py3',
-        'pycrypto',
+        'pycryptodome',
         'androguard'
     ],
     scripts=['malconf'],
