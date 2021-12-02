@@ -1,7 +1,6 @@
 beautifulsoup4>=4.9.1
 click<8.0,>=5.1
 flask~=1.1.0
-magic-yara-python==4.0.2.1
 malduck>=4.0.3
 mwcfg>=1.0.1
 mwcp==3.4.0
