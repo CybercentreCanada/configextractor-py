@@ -23,7 +23,6 @@ YARA_PARSER_PATH = ""
 YARA_PARSERS = {}
 
 
-
 DIRECTORY_LIST = ['Install Dir', 'InstallDir', 'InstallPath', 'Install Folder',
                   'Install Folder1', 'Install Folder2', 'Install Folder3',
                   'Folder Name', 'FolderName', 'pluginfoldername', 'nombreCarpeta']
@@ -143,7 +142,6 @@ def init_root_dependencies():
     YARA_PARSER_PATH = os.path.join(ROOT_DIR, "yara_parser.yaml")
 
 
-
 def validate_parsers(parser_list: List[dict]):
     mwcp_key = "MWCP"
     parsers_set = set()
@@ -228,16 +226,17 @@ def validate_parser_config():
             yaml.dump(p, f)
 
     if len(MWCP_PARSER_PATHS) != len(parsers_in_config):
-        raise Exception(f"Number of parsers in mwcp_parsers and parser_config.yml don't match: {len(MWCP_PARSER_PATHS)} != {len(parsers_in_config)}")
+        raise Exception("Number of parsers in mwcp_parsers and parser_config.yml don't match: "
+                        f"{len(MWCP_PARSER_PATHS)} != {len(parsers_in_config)}")
 
 
-def run(parser_list: List[str], f_path: str):
+def run(parser_list: List[str], f_path: str, output_dir: str = None):
     # all parsers in this list already matched
     # all parsers to be run must be in yml file in parser_dir
     outputs = {}
     reports = []
     for parser in parser_list:
-        report = mwcp.run(parser, file_path=f_path)
+        report = mwcp.run(parser, file_path=f_path, output_directory=output_dir)
         if report.metadata:
             outputs[parser] = report.metadata
             reports.append(report)
