@@ -230,13 +230,13 @@ def validate_parser_config():
                         f"{len(MWCP_PARSER_PATHS)} != {len(parsers_in_config)}")
 
 
-def run(parser_list: List[str], f_path: str, output_dir: str = None):
+def run(parser_list: List[str], f_path: str):
     # all parsers in this list already matched
     # all parsers to be run must be in yml file in parser_dir
     outputs = {}
     reports = []
     for parser in parser_list:
-        report = mwcp.run(parser, file_path=f_path, output_directory=output_dir)
+        report = mwcp.run(parser, file_path=f_path)
         if report.metadata:
             outputs[parser] = report.metadata
             reports.append(report)
@@ -333,11 +333,13 @@ def compile(tags=None):
     return parser_objs, None
 
 
-def register():
+def register(output_dir: str = None):
     global report
+    if not output_dir:
+        output_dir = os.getcwd()
     mwcp.register_entry_points()
     mwcp.register_parser_directory(MWCP_PARSERS_DIR_PATH)
-    report = mwcp.Report(output_directory=os.getcwd())
+    report = mwcp.Report(output_directory=output_dir)
     return report
 
 
