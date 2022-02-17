@@ -1,0 +1,8 @@
+MWCP:
+ - '/dir/containing/MWCP_parsers'
+MALDUCK:
+ - '/dir/containing/malduck_parsers'
+CAPE:
+ - '/dir/containing/CAPE_parsers'
+RATDECODER:
+ - '/dir/containing/RAT_parsers'
