@@ -1,8 +1,8 @@
 CAPE:
-  - ../configextractor/libraries/CAPEv2/modules/processing/parsers/CAPE
+  - ../external_parsers/CAPEv2/modules/processing/parsers/CAPE
 MALDUCK:
-  - ../mwcfg-modules
+  - ../external_parsers/mwcfg-modules
 MWCP:
-  - ../DC3-MWCP/mwcp/parsers
+  - ../external_parsers/DC3-MWCP/mwcp/parsers
 RATDECODER:
-  - ../RATDecoders/malwareconfig/decoders
+  - ../external_parsers/RATDecoders/malwareconfig/decoders
