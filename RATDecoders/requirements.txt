@@ -1,5 +1,0 @@
-pefile
-pbkdf2
-javaobj-py3
-pycryptodome
-androguard

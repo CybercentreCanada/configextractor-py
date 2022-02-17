@@ -1,6 +1,12 @@
 [submodule "dependencies/mwcfg-modules"]
 	path = dependencies/mwcfg-modules
 	url = https://github.com/c3rb3ru5d3d53c/mwcfg-modules.git
-[submodule "CAPEv2"]
+[submodule "configextractor/libraries/CAPEv2"]
 	path = configextractor/libraries/CAPEv2
 	url = https://github.com/kevoreilly/CAPEv2.git
+[submodule "RATDecoders"]
+	path = RATDecoders
+	url = https://github.com/kevthehermit/RATDecoders.git
+[submodule "mwcfg-modules"]
+	path = mwcfg-modules
+	url = https://github.com/c3rb3ru5d3d53c/mwcfg-modules.git
