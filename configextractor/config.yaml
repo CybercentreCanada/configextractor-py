@@ -3,6 +3,6 @@ CAPE:
 MALDUCK:
     - ../mwcfg-modules
 MWCP:
-    - ../configextractor/libraries/CAPEv2/modules/processing/parsers/mwcp
+    - ../DC3-MWCP/mwcp/parsers
 RATDECODER:
-    - ../RATDecoders/
+    - ../RATDecoders/malwareconfig/decoders

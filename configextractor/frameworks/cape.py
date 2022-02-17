@@ -1,9 +1,9 @@
 # CAPE framework
 import os
 import sys
-import yaml
 
 from configextractor.frameworks.base import Framework
+import configextractor.libraries.CAPEv2 as cape_lib
 from importlib.machinery import SourceFileLoader
 
 
@@ -12,11 +12,9 @@ class CAPE(Framework):
     def validate_parsers(parsers):
 
         # Some parsers, like CAPE, require modules that isn't pip packaged (ie. Cuckoo lib)
-        # for d_path in parsers['libraries']:
-        #     sys.path.append(d_path)
+        sys.path.extend(cape_lib.__path__._path)
 
         # Helper function for CAPE validation
-
         def is_valid(parser_path: str):
             parser_name = os.path.basename(parser_path)
 

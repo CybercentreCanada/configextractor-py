@@ -1,0 +1,8 @@
+beautifulsoup4>=4.9.1
+click<8.0,>=5.1
+flask~=1.1.0
+malduck>=4.0.3
+mwcfg>=1.0.1
+mwcp==3.4.0
+netstruct==1.1.2
+pyyaml>=5.3.1

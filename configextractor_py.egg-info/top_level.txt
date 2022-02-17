@@ -1,0 +1,3 @@
+configextractor
+mwcfg-modules
+tests

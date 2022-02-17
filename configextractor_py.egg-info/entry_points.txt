@@ -1,0 +1,5 @@
+
+    [console_scripts]
+    cx=configextractor.cli:main
+    configextractor=configextractor.cli:main
+    

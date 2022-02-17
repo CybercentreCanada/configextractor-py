@@ -10,3 +10,6 @@
 [submodule "mwcfg-modules"]
 	path = mwcfg-modules
 	url = https://github.com/c3rb3ru5d3d53c/mwcfg-modules.git
+[submodule "DC3-MWCP"]
+	path = DC3-MWCP
+	url = https://github.com/Defense-Cyber-Crime-Center/DC3-MWCP.git

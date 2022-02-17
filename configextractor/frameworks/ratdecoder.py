@@ -5,12 +5,9 @@ import os
 from typing import List, Dict
 from importlib.machinery import SourceFileLoader
 from configextractor.frameworks.base import Framework
-from subprocess import run as run_subprocess
-import json
 
 from malwareconfig.fileparser import FileParser
 from malwareconfig.common import Decoder
-import malwareconfig
 import inspect
 
 
@@ -61,16 +58,14 @@ class RATDECODER(Framework):
             for _, mod_object in inspect.getmembers(parser):
                 if inspect.isclass(mod_object):
                     if issubclass(mod_object, Decoder) and mod_object is not Decoder:
-                        decoders.append(mod_object)
-
-        for decoder in decoders:
-            try:
-                module = decoder()
-                module.set_file(file_info)
-                module.get_config()
-                if module.config:
-                    results.update({module.decoder_name: module.config})
-            except:
-                pass
+                        decoder = mod_object()
+                        decoder.set_file(file_info)
+                        try:
+                            decoder.get_config()
+                            if decoder.config:
+                                results.update({decoder.decoder_name: decoder.config})
+                        except Exception as e:
+                            # Log exception to get passed back to caller
+                            continue
 
         return results

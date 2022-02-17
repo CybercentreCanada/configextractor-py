@@ -1,8 +1,8 @@
-MWCP:
- - '/dir/containing/MWCP_parsers'
-MALDUCK:
- - '/dir/containing/malduck_parsers'
 CAPE:
- - '/dir/containing/CAPE_parsers'
+  - ../configextractor/libraries/CAPEv2/modules/processing/parsers/CAPE
+MALDUCK:
+  - ../mwcfg-modules
+MWCP:
+  - ../DC3-MWCP/mwcp/parsers
 RATDECODER:
- - '/dir/containing/RAT_parsers'
+  - ../RATDecoders/malwareconfig/decoders
