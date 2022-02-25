@@ -12,6 +12,7 @@ import yara
 from pathlib import Path
 from typing import List, Dict
 from mwcp import metadata
+from importlib.machinery import SourceFileLoader
 import configextractor.wrapper_malconf as malconf
 
 # Important file and directory paths
@@ -21,12 +22,13 @@ MWCP_PARSER_CONFIG_PATH = ""
 MWCP_PARSER_PATHS = []
 YARA_PARSER_PATH = ""
 YARA_PARSERS = {}
+CAPE_PARSERS_DIR = os.environ.get('CAPE_PARSERS_DIR', None)
 
 
 DIRECTORY_LIST = ['Install Dir', 'InstallDir', 'InstallPath', 'Install Folder',
                   'Install Folder1', 'Install Folder2', 'Install Folder3',
                   'Folder Name', 'FolderName', 'pluginfoldername', 'nombreCarpeta']
-DOMAINS_LIST = ['Domain', 'Domains', 'dns', 'C2']
+DOMAINS_LIST = ['Domain', 'Domains', 'dns', 'C2', 'address', "URLs"]
 PORT_LIST = ['p1', 'p2', 'Port', 'Port1', 'Port2', "Client Control Port", "Client Control Transfer"]
 FILENAME_LIST = ['InstallName', 'Install Name', 'Exe Name',
                  'Jar Name', 'JarName', 'StartUp Name', 'File Name',
@@ -487,7 +489,7 @@ def map_c2_domains(data):
                         it is the last character """
                     domain_list = data[domain_key].rstrip('*').split('*')
                 else:
-                    domain_list = [data[domain_key]]
+                    domain_list = data[domain_key] if isinstance(data[domain_key], list) else [data[domain_key]]
                 for addport in domain_list:
                     if ":" in addport:
                         report.add(metadata.Address(f"{addport}"))
@@ -586,6 +588,24 @@ def map_jar_fields(data):
     report.add_metadata(mwcpkey, jarinfo)
 
 
+def run_cape(file_path, report):
+    if CAPE_PARSERS_DIR:
+        for root, _, files in os.walk(CAPE_PARSERS_DIR):
+            for file in files:
+                for sample in [open(file_path, 'r', errors='ignore').read(), open(file_path, 'rb').read()]:
+                    try:
+                        script = os.path.join(root, file)
+                        parser = SourceFileLoader(file, script).load_module()
+                        result = parser.extract_config(sample)
+                        if result:
+                            ta_mapping(result, script)
+                            for key in result:
+                                if key not in SUPER_LIST:
+                                    report.add(metadata.Other(key, result[key]))
+                    except Exception as e:
+                        continue
+
+
 def run_ratdecoders(file_path, passed_report):
     global report
     report = passed_report
@@ -631,6 +651,7 @@ def run_mwcfg(file_path, report):
 def parse_file(file_path, report):
     run_ratdecoders(file_path, report)
     run_mwcfg(file_path, report)
+    run_cape(file_path, report)
     validate_parser_config()
     file_pars, tag_pars = compile()
     parsers = deduplicate(file_pars, tag_pars, file_path)
