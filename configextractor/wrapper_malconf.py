@@ -36,20 +36,23 @@ def process_file(file_info):
         logger.info("  [-] Running Decoder")
         module = __decoders__[file_info.malware_name]['obj']()
         module.set_file(file_info)
-        module.get_config()
-        conf = module.config
-        logger.info("  [-] Config Output\n")
-        if not conf:
-            conf = defaultdict(lambda: '')
-        for k, v in conf.items():
-            if isinstance(v, bytes):
-                try:
-                    conf[k] = v.decode()
-                except UnicodeDecodeError:
-                    conf[k] = str(v)[2:-1]
-        json_config = json.dumps(conf, indent=4, sort_keys=True)
-        logger.info(json_config)
-        return conf
+        try:
+            module.get_config()
+            conf = module.config
+            logger.info("  [-] Config Output\n")
+            if not conf:
+                conf = defaultdict(lambda: '')
+            for k, v in conf.items():
+                if isinstance(v, bytes):
+                    try:
+                        conf[k] = v.decode()
+                    except UnicodeDecodeError:
+                        conf[k] = str(v)[2:-1]
+            json_config = json.dumps(conf, indent=4, sort_keys=True)
+            logger.info(json_config)
+            return conf
+        except Exception as e:
+            return f"An error occured while using parser({file_info.malware_name}): {e}"
     else:
 
         return "[!] No RATDecoder or File is Packed"
