@@ -1,19 +1,43 @@
 # CAPE framework
 import os
-import sys
+import plyara
+import yara
+from plyara.utils import rebuild_yara_rule
 
 from configextractor.frameworks.base import Framework
-import configextractor.libraries.CAPEv2 as cape_lib
 from importlib.machinery import SourceFileLoader
 
+from CAPEv2.modules.processing.parsers.CAPE.Azorult import DESCRIPTION
+
+CAPE_TO_CCCS = {
+    ''
+}
 
 class CAPE(Framework):
     @staticmethod
+    def extract_yara(parsers):
+        yara_rules = list()
+        # Typically stored in a variable called 'rule_source'
+        for parser_path in parsers:
+            parser_name = os.path.basename(parser_path)
+            parser = SourceFileLoader(parser_name, parser_path).load_module()
+            if hasattr(parser, 'rule_source'):
+                yara_parser = plyara.Plyara()
+                yara_rule_frag = yara_parser.parse_string(parser.rule_source)[0]
+                if not yara_rule_frag.get('metadata'):
+                    yara_rule_frag['metadata'] = list()
+                yara_rule_frag['metadata'].extend([{'parser_path': parser_path},{'parser_framework': 'CAPE'}])
+                rebuilt_rule = rebuild_yara_rule(yara_rule_frag)
+                try:
+                    yara.compile(source=rebuilt_rule)
+                    yara_rules.append(rebuilt_rule)
+                except Exception as e:
+                    print(f"{parser_path}: {e}")
+
+        return yara_rules
+
+    @staticmethod
     def validate_parsers(parsers):
-
-        # Some parsers, like CAPE, require modules that isn't pip packaged (ie. Cuckoo lib)
-        sys.path.extend(cape_lib.__path__._path)
-
         # Helper function for CAPE validation
         def is_valid(parser_path: str):
             parser_name = os.path.basename(parser_path)
@@ -28,7 +52,7 @@ class CAPE(Framework):
                 if hasattr(parser, 'extract_config'):
                     return True
             except Exception as e:
-                raise e
+                pass
 
         new_parsers = []
         for path in parsers:
@@ -49,19 +73,20 @@ class CAPE(Framework):
         results = dict()
 
         def run_parser_on_sample(sample_path, parser_path):
-            sample_pt = open(sample_path, 'r', errors='ignore').read()
-            sample_enc = open(sample_path, 'rb').read()
+            try:
+                # Just run CAPE parsers as-is
+                parser_name = os.path.basename(parser_path)
+                parser = SourceFileLoader(parser_name, parser_path).load_module()
+                result = parser.extract_config(open(sample_path, 'rb').read())
+                if result:
+                    return {parser_name: {
+                        'author': parser.AUTHOR,
+                        'description': parser.DESCRIPTION or "",
+                        'config': result
+                    }}
+            except Exception as e:
+                return {parser_name: str(e)}
 
-            for sample in [sample_pt, sample_enc]:
-                try:
-                    # Just run CAPE parsers as-is
-                    parser_name = os.path.basename(parser_path)
-                    parser = SourceFileLoader(parser_name, parser_path).load_module()
-                    result = parser.extract_config(sample)
-                    if result:
-                        return {parser_name: result}
-                except:
-                    continue
         for parser_path in parsers:
             result = run_parser_on_sample(sample_path, parser_path)
             results.update(result) if result else None

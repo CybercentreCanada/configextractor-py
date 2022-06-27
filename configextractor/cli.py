@@ -1,26 +1,25 @@
 import click
 import os
 
-from configextractor.main import validate_configuration, run_parsers
+from configextractor.main import ConfigExtractor
 
 
-@click.option("-c", "--config_path", is_flag=True, help="Use a custom configuration file")
 @click.command()
-@click.argument('path', type=click.Path(exists=True))
-def main(path, config_path) -> None:
-    if not config_path:
-        config_path = f'{os.path.dirname(os.path.realpath(__file__))}/config.yaml'
+@click.argument('parsers_path', type=click.Path(exists=True))
+@click.argument('sample_path', type=click.Path(exists=True))
+def main(parsers_path, sample_path) -> None:
 
-    config = validate_configuration(config_path)
+    cx = ConfigExtractor(parsers_path)
 
     # Check if path given is a directory or a file
-    if os.path.isfile(path):
-        print(run_parsers(config, path))
+    if os.path.isfile(sample_path):
+        cx.run_parsers(sample_path)
+        print(cx.run_parsers(sample_path))
     else:
         # Iterate over directory
-        for root, _, files in os.walk(path):
+        for root, _, files in os.walk(sample_path):
             for file in files:
-                print(run_parsers(config, os.path.join(root, file)))
+                print(cx.run_parsers(sample_path))
 
 
 if __name__ == "__main__":

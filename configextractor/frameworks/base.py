@@ -3,6 +3,10 @@ from typing import List, Dict
 
 class Framework():
     @staticmethod
+    def extract_yara(parsers):
+        return []
+
+    @staticmethod
     def validate_parsers(parsers: List[str]) -> List[str]:
         return NotImplementedError()
 

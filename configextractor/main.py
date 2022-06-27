@@ -1,41 +1,42 @@
 # Main module for ConfigExtractor library
-from collections import defaultdict
-from email.policy import default
 import os
-import sys
-import json
-import yaml
+import yara
+
+from collections import defaultdict
 from configextractor.frameworks import CAPE, MALDUCK, MWCP, RATDECODER
 
 FRAMEWORK_LIBRARY_MAPPING = {
     'CAPE': CAPE,
-    'MALDUCK': MALDUCK,
-    'MWCP': MWCP,
-    'RATDECODER': RATDECODER,
+    # 'MALDUCK': MALDUCK,
+    # 'MWCP': MWCP,
+    # 'RATDECODER': RATDECODER,
 }
 
+class ConfigExtractor:
+    def __init__(self, parsers_dir) -> None:
+        parsers = [os.path.join(parsers_dir, file) for file in os.listdir(parsers_dir) if file.endswith('.py')]
 
-def validate_configuration(parser_config_path) -> dict():
-    parser_config = dict()
-    config = yaml.safe_load(open(parser_config_path, 'r').read())
+        # Determine what kind of parser these are and extract the yara_rules
+        self._yara_rules = list()
+        validated_parsers = list()
+        for fw_name, fw_class in FRAMEWORK_LIBRARY_MAPPING.items():
+            fw_parsers = fw_class.validate_parsers(parsers)
+            validated_parsers.extend(fw_parsers)
+            self._yara_rules.extend(fw_class.extract_yara(fw_parsers))
 
-    for framework, parsers in config.items():
-        # Preprocess parser list in case of relative file paths
-        valid_parsers = list()
-        for parser in parsers:
-            if parser.startswith('.'):
-                parser = os.path.join(os.path.dirname(parser_config_path), parser)
-            valid_parsers.append(parser)
-        parser_config[framework] = FRAMEWORK_LIBRARY_MAPPING[framework].validate_parsers(valid_parsers)
-
-    # Return validated configuration back to calling function
-    config.update(parser_config)
-    return config
+        self.yara = yara.compile(source='\n'.join(self._yara_rules))
+        self.parsers = validated_parsers
 
 
-def run_parsers(sample, parser_config):
-    results = dict()
-    for framework, parser_list in parser_config.items():
-        results[framework] = FRAMEWORK_LIBRARY_MAPPING[framework].run(parser_list, sample)
+    def run_parsers(self, sample):
+        results = dict()
+        parsers_to_run = defaultdict(list)
+        for yara_match in self.yara.match(sample):
+            parser_path = yara_match.meta.get('parser_path')
+            parser_framework = yara_match.meta.get('parser_framework')
+            parsers_to_run[parser_framework].append(parser_path)
 
-    return results
+        for framework, parser_list in parsers_to_run.items():
+            results[framework] = FRAMEWORK_LIBRARY_MAPPING[framework].run(sample, parser_list)
+
+        return results
