@@ -12,7 +12,7 @@ a wrapper for popular malware configuration data decoders from:
 * MWCFG : https://github.com/c3rb3ru5d3d53c/mwcfg [BSD 3-Clause License]
 
 ## Installation Guide
-### Setup YARA
+### Setup YARA on Host
 ```bash
 sudo apt-get update && sudo apt-get install -y git libssl-dev libmagic-dev automake libtool make gcc wget libjansson-dev pkg-config
 export YARA_VERSION=4.1.3
@@ -24,6 +24,14 @@ cd /tmp/yara-${YARA_VERSION}
 make
 make install
 pip install  --global-option="build" --global-option="--enable-dotnet" --global-option="--enable-magic" yara-python==$YARA_VERSION
+```
+
+### Running in a Container
+```bash
+docker container run -it \
+  -v /path/to/parsers:/mnt/parsers \
+  -v /path/to/samples:/mnt/samples \
+  cccs/assemblyline-service-configextractor bash
 ```
 
 ### Command-line Usage
