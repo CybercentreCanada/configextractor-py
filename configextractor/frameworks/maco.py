@@ -42,40 +42,29 @@ class MACO(Framework):
                         else:
                             # In reality, a YARA rule should always be defined but just-in-case
                             standalone_parsers.append(parser_path)
+                        break
 
         return yara_rules, standalone_parsers
 
     def validate_parsers(self, parsers: List[str]) -> List[str]:
         # Helper function for MaCo validation
-        def is_valid(parser_dir_path: str):
-            parser_name = os.path.basename(parser_dir_path)
+        new_parsers = list()
+        for parser_path in parsers:
+            parser_name = os.path.basename(parser_path)
 
-            for parser_path in os.listdir(parser_dir_path):
-                if not parser_path.endswith('.py') or parser_name.startswith('test_') or parser_name == '__init__.py':
-                    # If file is marked as a test file or isn't a python file, ignore
-                    continue
+            if parser_name.startswith('test_') or parser_name == '__init__.py':
+                # If file is marked as a test file or isn't a python file, ignore
+                continue
 
-                # All MALDUCK parsers import a common class
-                parser_path = os.path.join(parser_dir_path, parser_path)
-                try:
-                    parser = SourceFileLoader(parser_name, parser_path).load_module()
-                    if hasattr(parser, 'Extractor') and parser.Extractor == Extractor:
-                        return True
-                except Exception as e:
-                    self.log.error(e)
-
-        new_parsers = []
-        for path in parsers:
-            if os.path.isdir(path):
-                # Recurse through the directory and find the exact path to the parsers
-                for root, subdirs, _ in os.walk(path):
-                    for subdir in subdirs:
-                        # Only attempt validation if the directory contain Python files
-                        parser = os.path.join(root, subdir)
-                        if any(file.endswith('.py') for file in os.listdir(parser)) and is_valid(parser):
-                            # De-duplicate directories that contain multiple parsers
-                            if not any(root.startswith(parser_dir) for parser_dir in new_parsers):
-                                new_parsers.append(root)
+            try:
+                parser = SourceFileLoader(parser_name, parser_path).load_module()
+                for _, mod_object in inspect.getmembers(parser):
+                    if inspect.isclass(mod_object) and \
+                            issubclass(mod_object, Extractor) and mod_object is not Extractor:
+                        new_parsers.append(parser_path)
+                        break
+            except Exception as e:
+                self.log.error(e)
 
         return new_parsers
 
@@ -90,9 +79,9 @@ class MACO(Framework):
                         try:
                             decoder = mod_object()
                             # Run MaCo parser with YARA matches
-                            result = decoder.run(open(sample_path, 'rb').read(), matches=yara_matches)
+                            result = decoder.run(open(sample_path, 'rb'), matches=yara_matches)
                             if result:
-                                results[decoder.name] = result.dict()
+                                results[decoder.name] = result.dict(skip_defaults=True)
                         except Exception as e:
                             self.log.error(e)
                         finally:

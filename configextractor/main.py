@@ -1,6 +1,7 @@
 # Main module for ConfigExtractor library
 from locale import getlocale
 import os
+import regex
 import yara
 
 from collections import defaultdict
@@ -13,6 +14,7 @@ class ConfigExtractor:
     def __init__(self, parsers_dir, logger: Logger = None, parser_blocklist=[]) -> None:
         if not logger:
             logger = getLogger()
+        self.log = logger
         self.FRAMEWORK_LIBRARY_MAPPING = {
             'CAPE': CAPE(logger),
             'MACO': MACO(logger),
@@ -20,8 +22,6 @@ class ConfigExtractor:
             # 'MWCP': MWCP(logger),
             # 'RATDECODER': RATDECODER(logger),
         }
-        self.parser_blocklist = parser_blocklist
-
         parsers = [os.path.join(root, file) for root, _, files in os.walk(parsers_dir)
                    for file in files if file.endswith('.py')]
         self.standalone_parsers = defaultdict(list)
@@ -29,14 +29,21 @@ class ConfigExtractor:
         self._yara_rules = list()
         validated_parsers = list()
         for fw_name, fw_class in self.FRAMEWORK_LIBRARY_MAPPING.items():
-            fw_parsers = fw_class.validate_parsers(parsers)
+            fw_parsers = [parser_path for parser_path in fw_class.validate_parsers(parsers) if not any(
+                regex.match(blocked_parser, parser_path) for blocked_parser in parser_blocklist)]
             validated_parsers.extend(fw_parsers)
-            yara_rules, standalone_parsers = fw_class.extract_yara(fw_parsers)
+            yara_rules, standalone_parsers = fw_class.extract_yara(validated_parsers)
             self._yara_rules.extend(yara_rules)
             self.standalone_parsers[fw_name].extend(standalone_parsers)
 
         self.yara = yara.compile(source='\n'.join(self._yara_rules))
         self.parsers = validated_parsers
+
+        self.log.debug(f"# of YARA-dependent parsers: {len(self.parsers)}")
+        self.log.debug(f"# of YARA rules extracted from parsers: {len(self._yara_rules)}")
+        [self.log.debug(f"# of standalone {k} parsers: {len(v)}") for k, v in self.standalone_parsers.items()]
+        if parser_blocklist:
+            self.log.info(f"Ignoring output from the following parsers matching: {parser_blocklist}")
 
     def run_parsers(self, sample):
         results = dict()
@@ -45,24 +52,26 @@ class ConfigExtractor:
             # Retrieve relevant parser information
             parser_path = yara_match.meta.get('parser_path')
             parser_framework = yara_match.meta.get('parser_framework')
-            if any(pname in self.parser_blocklist for pname in [parser_path, os.path.basename(parser_path)[-3]]):
-                # If instructed to block, then block
-                continue
 
             # Pass in yara.Match objects since some framework can leverage it
             parsers_to_run[parser_framework][parser_path].append(yara_match)
 
         for framework, parser_list in parsers_to_run.items():
-            results[framework] = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(sample, parser_list)
+            if parser_list:
+                self.log.debug(
+                    f'Running the following under the {framework} framework with YARA: {list(parser_list.keys())}')
+                results[framework] = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(sample, parser_list)
 
         # Run Standalone parsers after YARA-dependent
         for framework, parser_list in self.standalone_parsers.items():
             parser_list = {parser: [] for parser in parser_list
                            if any(pname in self.parser_blocklist for pname in [parser, os.path.basename(parser)[-3]])}
-            result = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(sample, parser_list)
-            if results.get(framework):
-                results[framework].update()
-            else:
-                results[framework] = result
+            if parser_list:
+                self.log.debug(f'Running the following under the {framework} framework: {list(parser_list.keys())}')
+                result = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(sample, parser_list)
+                if results.get(framework):
+                    results[framework].update()
+                else:
+                    results[framework] = result
 
         return results
