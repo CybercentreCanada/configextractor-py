@@ -1,6 +1,0 @@
-pytest
-pytest-elasticsearch
-pytest-mock
-pytest-cov
-codecov
-Faker
