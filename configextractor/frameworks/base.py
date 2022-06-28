@@ -1,15 +1,16 @@
-from typing import List, Dict
+from logging import Logger
+from typing import List, Dict, Tuple
 
 
 class Framework():
-    @staticmethod
-    def extract_yara(parsers):
-        return []
+    def __init__(self, logger: Logger):
+        self.log = logger
 
-    @staticmethod
-    def validate_parsers(parsers: List[str]) -> List[str]:
+    def extract_yara(self, parsers: List[str]) -> Tuple[List[str], List[str]]:
+        return [], parsers
+
+    def validate_parsers(self, parsers: List[str]) -> List[str]:
         return NotImplementedError()
 
-    @staticmethod
-    def run(sample_path: str, parsers: List[str]) -> Dict[str, dict]:
+    def run(self, sample_path: str, parsers: Dict[str, List[str]]) -> Dict[str, dict]:
         return NotImplementedError()

@@ -2,42 +2,41 @@
 import os
 import plyara
 import yara
-from plyara.utils import rebuild_yara_rule
 
 from configextractor.frameworks.base import Framework
 from importlib.machinery import SourceFileLoader
+from plyara.utils import rebuild_yara_rule
+from typing import Dict, List, Tuple
 
-from CAPEv2.modules.processing.parsers.CAPE.Azorult import DESCRIPTION
-
-CAPE_TO_CCCS = {
-    ''
-}
 
 class CAPE(Framework):
-    @staticmethod
-    def extract_yara(parsers):
+    def extract_yara(self, parsers: List[str]) -> Tuple[List[str], List[str]]:
         yara_rules = list()
+        standalone_parsers = list()
         # Typically stored in a variable called 'rule_source'
         for parser_path in parsers:
             parser_name = os.path.basename(parser_path)
             parser = SourceFileLoader(parser_name, parser_path).load_module()
             if hasattr(parser, 'rule_source'):
+                # Modify YARA rule to include meta about the parser
                 yara_parser = plyara.Plyara()
                 yara_rule_frag = yara_parser.parse_string(parser.rule_source)[0]
                 if not yara_rule_frag.get('metadata'):
                     yara_rule_frag['metadata'] = list()
-                yara_rule_frag['metadata'].extend([{'parser_path': parser_path},{'parser_framework': 'CAPE'}])
+                yara_rule_frag['metadata'].extend([{'parser_path': parser_path}, {'parser_framework': 'CAPE'}])
                 rebuilt_rule = rebuild_yara_rule(yara_rule_frag)
                 try:
                     yara.compile(source=rebuilt_rule)
                     yara_rules.append(rebuilt_rule)
                 except Exception as e:
-                    print(f"{parser_path}: {e}")
+                    self.log.error(f"{parser_path}: {e}")
+            else:
+                # Assume that this parser can run on any sample
+                standalone_parsers.append(parser_path)
 
-        return yara_rules
+        return yara_rules, standalone_parsers
 
-    @staticmethod
-    def validate_parsers(parsers):
+    def validate_parsers(self, parsers: List[str]) -> List[str]:
         # Helper function for CAPE validation
         def is_valid(parser_path: str):
             parser_name = os.path.basename(parser_path)
@@ -52,7 +51,7 @@ class CAPE(Framework):
                 if hasattr(parser, 'extract_config'):
                     return True
             except Exception as e:
-                pass
+                self.log.error(f"{parser_path}: {e}")
 
         new_parsers = []
         for path in parsers:
@@ -68,14 +67,13 @@ class CAPE(Framework):
                     new_parsers.append(path)
         return new_parsers
 
-    @ staticmethod
-    def run(sample_path, parsers):
+    def run(self, sample_path: str, parsers: Dict[str, List[str]]) -> Dict[str, dict]:
         results = dict()
 
         def run_parser_on_sample(sample_path, parser_path):
             try:
                 # Just run CAPE parsers as-is
-                parser_name = os.path.basename(parser_path)
+                parser_name = os.path.basename(parser_path)[:-3]
                 parser = SourceFileLoader(parser_name, parser_path).load_module()
                 result = parser.extract_config(open(sample_path, 'rb').read())
                 if result:
@@ -85,10 +83,12 @@ class CAPE(Framework):
                         'config': result
                     }}
             except Exception as e:
-                return {parser_name: str(e)}
+                self.log.error(f"{parser_path}: {e}")
+
+            return {}
 
         for parser_path in parsers:
             result = run_parser_on_sample(sample_path, parser_path)
-            results.update(result) if result else None
+            results.update(result)
 
         return results

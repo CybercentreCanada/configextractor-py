@@ -1,19 +1,17 @@
 # MALDUCK framework
 
-import os
-from typing import List, Dict
-from importlib.machinery import SourceFileLoader
-from configextractor.frameworks.base import Framework
-from subprocess import run as run_subprocess
 import json
+import os
 
+from configextractor.frameworks.base import Framework
+from importlib.machinery import SourceFileLoader
 from malduck import Extractor
+from subprocess import run as run_subprocess
+from typing import List, Dict
 
 
 class MALDUCK(Framework):
-    @staticmethod
-    def validate_parsers(parsers):
-
+    def validate_parsers(self, parsers: List[str]) -> List[str]:
         # Helper function for MALDUCK validation
         def is_valid(parser_dir_path: str):
             parser_name = os.path.basename(parser_dir_path)
@@ -30,7 +28,7 @@ class MALDUCK(Framework):
                     if hasattr(parser, 'Extractor') and parser.Extractor == Extractor:
                         return True
                 except Exception as e:
-                    raise e
+                    self.log.error(e)
 
         new_parsers = []
         for path in parsers:
@@ -47,8 +45,7 @@ class MALDUCK(Framework):
 
         return new_parsers
 
-    @staticmethod
-    def run(sample_path: str, parsers: List[str]) -> Dict[str, dict]:
+    def run(self, sample_path: str, parsers: Dict[str, List[str]]) -> Dict[str, dict]:
         results = dict
         for modules_path in parsers:
             # MWCFG tool supports passing a directory containing all modules used for analysis

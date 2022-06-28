@@ -1,17 +1,16 @@
 # MALDUCK framework
 
 import os
-from typing import List, Dict
-from importlib.machinery import SourceFileLoader
-from configextractor.frameworks.base import Framework
-
-from mwcp import Parser
 import mwcp
+
+from configextractor.frameworks.base import Framework
+from importlib.machinery import SourceFileLoader
+from mwcp import Parser
+from typing import List, Dict
 
 
 class MWCP(Framework):
-    @staticmethod
-    def validate_parsers(parsers: List[str]):
+    def validate_parsers(self, parsers: List[str]) -> List[str]:
 
         # Helper function for MWCP validation
         def is_valid(parser_path: str):
@@ -27,7 +26,7 @@ class MWCP(Framework):
                 if hasattr(parser, 'Parser') and parser.Parser == Parser:
                     return True
             except Exception as e:
-                raise e
+                self.log.error(e)
 
         new_parsers = []
         for path in parsers:
@@ -44,8 +43,7 @@ class MWCP(Framework):
 
         return new_parsers
 
-    @staticmethod
-    def run(sample_path: str, parsers: List[str]) -> Dict[str, dict]:
+    def run(self, sample_path: str, parsers: Dict[str, List[str]]) -> Dict[str, dict]:
         results = dict
 
         def run_parser_on_sample(sample_path, parser_path):
@@ -60,8 +58,8 @@ class MWCP(Framework):
                     result = mwcp.run(getattr(parser, parser_name), data=sample).as_dict()
                     if result:
                         return {parser_name: result}
-                except:
-                    continue
+                except Exception as e:
+                    self.log.error(e)
 
         for parser_path in parsers:
             result = run_parser_on_sample(sample_path, parser_path)

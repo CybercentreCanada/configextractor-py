@@ -2,18 +2,16 @@
 
 import inspect
 import os
-from typing import List, Dict
-from importlib.machinery import SourceFileLoader
-from configextractor.frameworks.base import Framework
 
-from malwareconfig.fileparser import FileParser
+from configextractor.frameworks.base import Framework
 from malwareconfig.common import Decoder
-import inspect
+from malwareconfig.fileparser import FileParser
+from importlib.machinery import SourceFileLoader
+from typing import List, Dict
 
 
 class RATDECODER(Framework):
-    @staticmethod
-    def validate_parsers(parsers: List[str]):
+    def validate_parsers(self, parsers: List[str]) -> List[str]:
 
         # Helper function for MWCP validation
         def is_valid(parser_path: str):
@@ -29,7 +27,7 @@ class RATDECODER(Framework):
                 if hasattr(parser, 'Decoder') and parser.Decoder == Decoder:
                     return True
             except Exception as e:
-                raise e
+                self.log.error(e)
 
         new_parsers = []
         for path in parsers:
@@ -46,8 +44,7 @@ class RATDECODER(Framework):
 
         return new_parsers
 
-    @staticmethod
-    def run(sample_path: str, parsers: List[str]) -> Dict[str, dict]:
+    def run(self, sample_path: str, parsers: Dict[str, List[str]]) -> Dict[str, dict]:
         results = dict
         file_info = FileParser(sample_path)
         # Compile list of decoders
@@ -66,6 +63,7 @@ class RATDECODER(Framework):
                                 results.update({decoder.decoder_name: decoder.config})
                         except Exception as e:
                             # Log exception to get passed back to caller
+                            self.log.error(e)
                             continue
 
         return results
