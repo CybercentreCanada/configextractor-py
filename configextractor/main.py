@@ -4,7 +4,7 @@ import regex
 import yara
 
 from collections import defaultdict
-from configextractor.frameworks import CAPE, MALDUCK, MWCP, RATDECODER, MACO
+from configextractor.frameworks import CAPE, MACO
 
 from logging import getLogger, Logger
 from typing import Dict
