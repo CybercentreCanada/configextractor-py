@@ -1,5 +1,4 @@
 # Main module for ConfigExtractor library
-from locale import getlocale
 import os
 import regex
 import yara
@@ -8,20 +7,31 @@ from collections import defaultdict
 from configextractor.frameworks import CAPE, MALDUCK, MWCP, RATDECODER, MACO
 
 from logging import getLogger, Logger
+from typing import Dict
+
+PARSER_FRAMEWORKS = [CAPE, MACO]
 
 
 class ConfigExtractor:
+    @staticmethod
+    def get_details(parser_path) -> Dict[str, str]:
+        # Determine framework
+        for framework in PARSER_FRAMEWORKS:
+            if framework(logger=None).validate_parsers([parser_path]):
+                # Extract details about parser
+                return {
+                    'framework': framework.__name__,
+                    'classification': framework.get_classification(parser_path),
+                    'name': framework.get_name(parser_path)
+                }
+        return None
+
     def __init__(self, parsers_dir, logger: Logger = None, parser_blocklist=[]) -> None:
         if not logger:
             logger = getLogger()
         self.log = logger
-        self.FRAMEWORK_LIBRARY_MAPPING = {
-            'CAPE': CAPE(logger),
-            'MACO': MACO(logger),
-            # 'MALDUCK': MALDUCK(logger),
-            # 'MWCP': MWCP(logger),
-            # 'RATDECODER': RATDECODER(logger),
-        }
+        self.FRAMEWORK_LIBRARY_MAPPING = {fw_cls.__name__: fw_cls(logger) for fw_cls in PARSER_FRAMEWORKS}
+
         parsers = [os.path.join(root, file) for root, _, files in os.walk(parsers_dir)
                    for file in files if file.endswith('.py')]
         self.standalone_parsers = defaultdict(list)

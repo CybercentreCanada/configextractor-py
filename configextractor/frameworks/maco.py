@@ -12,6 +12,22 @@ from typing import List, Dict, Tuple
 
 
 class MACO(Framework):
+    @staticmethod
+    def get_classification(parser_path):
+        parser = SourceFileLoader(parser_path, parser_path).load_module()
+        for _, mod_object in inspect.getmembers(parser):
+            if inspect.isclass(mod_object) and issubclass(mod_object, Extractor) and mod_object is not Extractor:
+                return mod_object().sharing
+        return None
+
+    @staticmethod
+    def get_name(parser_path):
+        parser = SourceFileLoader(parser_path, parser_path).load_module()
+        for _, mod_object in inspect.getmembers(parser):
+            if inspect.isclass(mod_object) and issubclass(mod_object, Extractor) and mod_object is not Extractor:
+                return mod_object.__name__
+        return None
+
     def extract_yara(self, parsers: List[str]) -> Tuple[List[str], List[str]]:
         yara_rules = list()
         standalone_parsers = list()

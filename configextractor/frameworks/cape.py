@@ -10,6 +10,13 @@ from typing import Dict, List, Tuple
 
 
 class CAPE(Framework):
+    @staticmethod
+    def get_classification(parser_path):
+        parser = SourceFileLoader(parser_path, parser_path).load_module()
+        if hasattr(parser, 'TLP'):
+            return parser.TLP
+        return None
+
     def extract_yara(self, parsers: List[str]) -> Tuple[List[str], List[str]]:
         yara_rules = list()
         standalone_parsers = list()
