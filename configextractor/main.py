@@ -32,8 +32,7 @@ class ConfigExtractor:
         self.log = logger
         self.FRAMEWORK_LIBRARY_MAPPING = {fw_cls.__name__: fw_cls(logger) for fw_cls in PARSER_FRAMEWORKS}
 
-        parsers = [os.path.join(root, file) for root, _, files in os.walk(parsers_dir)
-                   for file in files if file.endswith('.py')]
+        parsers = [os.path.join(root, file) for root, _, files in os.walk(parsers_dir) for file in files]
         self.standalone_parsers = defaultdict(list)
         # Determine what kind of parser these are and extract the yara_rules
         self._yara_rules = list()
