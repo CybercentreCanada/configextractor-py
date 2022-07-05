@@ -13,7 +13,10 @@ class Framework():
 
     @staticmethod
     def get_name(parser_path) -> str:
-        return os.path.basename(parser_path)[:-3]
+        name = os.path.basename(parser_path)
+        if name.endswith('.py'):
+            name = name[:-3]
+        return name
 
     def extract_yara(self, parsers: List[str]) -> Tuple[List[str], List[str]]:
         return [], parsers
