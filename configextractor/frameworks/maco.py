@@ -97,7 +97,11 @@ class MACO(Framework):
                             # Run MaCo parser with YARA matches
                             result = decoder.run(open(sample_path, 'rb'), matches=yara_matches)
                             if result:
-                                results[decoder.name] = result.dict(skip_defaults=True)
+                                results[decoder.name] = {
+                                    'author': decoder.author,
+                                    'description': decoder.__doc__,
+                                    'config': result.dict(skip_defaults=True),
+                                }
                         except Exception as e:
                             self.log.error(e)
                         finally:

@@ -3,6 +3,7 @@ import os
 import plyara
 import yara
 
+from maco.model import ExtractorModel
 from configextractor.frameworks.base import Framework
 from importlib.machinery import SourceFileLoader
 from plyara.utils import rebuild_yara_rule
@@ -84,10 +85,11 @@ class CAPE(Framework):
                 parser = SourceFileLoader(parser_name, parser_path).load_module()
                 result = parser.extract_config(open(sample_path, 'rb').read())
                 if result:
+                    # Just throw everthing into other for now
                     return {parser_name: {
                         'author': parser.AUTHOR,
                         'description': parser.DESCRIPTION or "",
-                        'config': result
+                        'config': ExtractorModel(other=result, family=parser_name).dict(skip_defaults=True)
                     }}
             except Exception as e:
                 self.log.error(f"{parser_path}: {e}")
