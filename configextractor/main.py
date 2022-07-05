@@ -55,7 +55,7 @@ class ConfigExtractor:
         if parser_blocklist:
             self.log.info(f"Ignoring output from the following parsers matching: {parser_blocklist}")
 
-    def run_parsers(self, sample):
+    def run_parsers(self, sample, parser_blocklist=[]):
         results = dict()
         parsers_to_run = defaultdict(lambda: defaultdict(list))
         for yara_match in self.yara.match(sample):
@@ -75,7 +75,7 @@ class ConfigExtractor:
         # Run Standalone parsers after YARA-dependent
         for framework, parser_list in self.standalone_parsers.items():
             parser_list = {parser: [] for parser in parser_list
-                           if any(pname in self.parser_blocklist for pname in [parser, os.path.basename(parser)[-3]])}
+                           if any(pname in parser_blocklist for pname in [parser, os.path.basename(parser)[-3]])}
             if parser_list:
                 self.log.debug(f'Running the following under the {framework} framework: {list(parser_list.keys())}')
                 result = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(sample, parser_list)
