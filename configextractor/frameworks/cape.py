@@ -48,7 +48,7 @@ class CAPE(Framework):
         def is_valid(parser_path: str):
             parser_name = os.path.basename(parser_path)
 
-            if not parser_path.endswith('.py') or parser_name.startswith('test_'):
+            if parser_name.startswith('test_'):
                 # If file is marked as a test file or isn't a python file, ignore
                 return False
 
