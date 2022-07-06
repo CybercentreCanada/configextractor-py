@@ -1,15 +1,16 @@
 # Main module for ConfigExtractor library
 import os
 import regex
+import sys
 import yara
 
 from collections import defaultdict
-from configextractor.frameworks import CAPE, MACO
+from configextractor.frameworks import CAPE, MACO, MWCP
 
 from logging import getLogger, Logger
 from typing import Dict
 
-PARSER_FRAMEWORKS = [CAPE, MACO]
+PARSER_FRAMEWORKS = [CAPE, MACO, MWCP]
 
 
 class ConfigExtractor:
@@ -26,13 +27,19 @@ class ConfigExtractor:
                 }
         return None
 
-    def __init__(self, parsers_dir, logger: Logger = None, parser_blocklist=[]) -> None:
+    def __init__(self, parsers_dir, logger: Logger = None, parser_blocklist=[], check_extension=True) -> None:
         if not logger:
             logger = getLogger()
         self.log = logger
         self.FRAMEWORK_LIBRARY_MAPPING = {fw_cls.__name__: fw_cls(logger) for fw_cls in PARSER_FRAMEWORKS}
 
-        parsers = [os.path.join(root, file) for root, _, files in os.walk(parsers_dir) for file in files]
+        parsers = list()
+        for root, _, files in os.walk(parsers_dir):
+            parsers.extend([os.path.join(root, file) for file in files if (check_extension and file.endswith('.py'))])
+            sys.path.append(root)
+
+        parsers = [os.path.join(root, file) for root, _, files in os.walk(parsers_dir) for file in files
+                   if (check_extension and file.endswith('.py'))]
         self.standalone_parsers = defaultdict(list)
         # Determine what kind of parser these are and extract the yara_rules
         self._yara_rules = list()
@@ -74,7 +81,7 @@ class ConfigExtractor:
         # Run Standalone parsers after YARA-dependent
         for framework, parser_list in self.standalone_parsers.items():
             parser_list = {parser: [] for parser in parser_list
-                           if any(pname in parser_blocklist for pname in [parser, os.path.basename(parser)[-3]])}
+                           if not any(pname in parser_blocklist for pname in [parser, os.path.basename(parser)[-3]])}
             if parser_list:
                 self.log.debug(f'Running the following under the {framework} framework: {list(parser_list.keys())}')
                 result = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(sample, parser_list)

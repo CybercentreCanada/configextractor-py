@@ -1,5 +1,6 @@
 # MALDUCK framework
 
+import inspect
 import os
 import mwcp
 
@@ -44,22 +45,24 @@ class MWCP(Framework):
         return new_parsers
 
     def run(self, sample_path: str, parsers: Dict[str, List[str]]) -> Dict[str, dict]:
-        results = dict
+        results = dict()
 
         def run_parser_on_sample(sample_path, parser_path):
-            sample_pt = open(sample_path, 'r', errors='ignore').read()
-            sample_enc = open(sample_path, 'rb').read()
+            try:
+                # Just run MWCP parsers directly, using the filename to fetch the class attribute from module
+                parser_name = os.path.basename(parser_path).strip('.py')
+                parser = SourceFileLoader(parser_name, parser_path).load_module()
 
-            for sample in [sample_pt, sample_enc]:
-                try:
-                    # Just run MWCP parsers directly, using the filename to fetch the class attribute from module
-                    parser_name = os.path.basename(parser_path).strip('.py')
-                    parser = SourceFileLoader(parser_name, parser_path).load_module()
-                    result = mwcp.run(getattr(parser, parser_name), data=sample).as_dict()
-                    if result:
-                        return {parser_name: result}
-                except Exception as e:
-                    self.log.error(e)
+                # Find the attribute with that's an instance of the Parser class
+                for _, mod_object in inspect.getmembers(parser):
+                    if inspect.isclass(mod_object):
+                        if issubclass(mod_object, Parser) and mod_object is not Parser:
+                            result = mwcp.run(mod_object, data=open(sample_path, 'rb').read()).as_dict()
+                            if result and not result.get('errors'):
+                                return {parser_name: result}
+                            return None
+            except Exception as e:
+                self.log.error(e)
 
         for parser_path in parsers:
             result = run_parser_on_sample(sample_path, parser_path)
