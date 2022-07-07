@@ -34,6 +34,7 @@ class ConfigExtractor:
         self.FRAMEWORK_LIBRARY_MAPPING = {fw_cls.__name__: fw_cls(logger) for fw_cls in PARSER_FRAMEWORKS}
 
         parsers = list()
+        sys.path.append(os.path.join(parsers_dir, os.pardir))
         for root, _, files in os.walk(parsers_dir):
             parsers.extend([os.path.join(root, file) for file in files if (check_extension and file.endswith('.py'))])
             sys.path.append(root)
