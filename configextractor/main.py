@@ -34,27 +34,32 @@ class ConfigExtractor:
         self.FRAMEWORK_LIBRARY_MAPPING = {fw_cls.__name__: fw_cls(logger) for fw_cls in PARSER_FRAMEWORKS}
 
         parsers = list()
+        self.log.debug('Adding directories within parser directory in case of local dependencies')
+        self.log.debug(f'Adding {os.path.join(parsers_dir, os.pardir)} to PATH')
         sys.path.append(os.path.join(parsers_dir, os.pardir))
         for root, _, files in os.walk(parsers_dir):
             parsers.extend([os.path.join(root, file) for file in files if (check_extension and file.endswith('.py'))])
+            self.log.debug(f'Adding {root} to PATH')
             sys.path.append(root)
 
         parsers = [os.path.join(root, file) for root, _, files in os.walk(parsers_dir) for file in files
                    if (check_extension and file.endswith('.py'))]
         self.standalone_parsers = defaultdict(list)
+        self.parsers = list()
         # Determine what kind of parser these are and extract the yara_rules
         self._yara_rules = list()
         validated_parsers = list()
         for fw_name, fw_class in self.FRAMEWORK_LIBRARY_MAPPING.items():
             fw_parsers = [parser_path for parser_path in fw_class.validate_parsers(parsers) if not any(
                 regex.match(blocked_parser, parser_path) for blocked_parser in parser_blocklist)]
-            validated_parsers.extend(fw_parsers)
-            yara_rules, standalone_parsers = fw_class.extract_yara(validated_parsers)
+            self.parsers.extend(fw_parsers)
+            # Remove parsers from set that have already been validated against a framework
+            [parsers.remove(vp) for vp in fw_parsers]
+            yara_rules, standalone_parsers = fw_class.extract_yara(fw_parsers)
             self._yara_rules.extend(yara_rules)
             self.standalone_parsers[fw_name].extend(standalone_parsers)
 
         self.yara = yara.compile(source='\n'.join(self._yara_rules))
-        self.parsers = validated_parsers
 
         self.log.debug(f"# of YARA-dependent parsers: {len(self.parsers)}")
         self.log.debug(f"# of YARA rules extracted from parsers: {len(self._yara_rules)}")

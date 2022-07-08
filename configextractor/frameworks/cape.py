@@ -3,9 +3,9 @@ import os
 import plyara
 import yara
 
-from maco.model import ExtractorModel
 from configextractor.frameworks.base import Framework
 from importlib.machinery import SourceFileLoader
+from maco.model import ExtractorModel
 from plyara.utils import rebuild_yara_rule
 from typing import Dict, List, Tuple
 
