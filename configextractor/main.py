@@ -81,8 +81,8 @@ class ConfigExtractor:
                 # Extract details about parser
                 return {
                     'framework': fw_name,
-                    'classification': fw_class.get_classification(parser_path),
-                    'name': fw_class.get_name(parser_path)
+                    'classification': fw_class.__class__.get_classification(parser_path),
+                    'name': fw_class.__class__.get_name(parser_path)
                 }
         return None
 
