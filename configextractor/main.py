@@ -17,19 +17,6 @@ PARSER_FRAMEWORKS = [(CAPE, 'rule_source'), (MACO, 'yara_rule'), (MWCP, None)]
 
 
 class ConfigExtractor:
-    @staticmethod
-    def get_details(parser_path) -> Dict[str, str]:
-        # Determine framework
-        for framework in PARSER_FRAMEWORKS:
-            if framework(logger=None).validate_parsers([parser_path]):
-                # Extract details about parser
-                return {
-                    'framework': framework.__name__,
-                    'classification': framework.get_classification(parser_path),
-                    'name': framework.get_name(parser_path)
-                }
-        return None
-
     def __init__(self, parsers_dir, logger: Logger = None, parser_blocklist=[], check_extension=True) -> None:
         if not logger:
             logger = getLogger()
@@ -85,6 +72,19 @@ class ConfigExtractor:
         [self.log.debug(f"# of standalone {k} parsers: {len(v)}") for k, v in self.standalone_parsers.items()]
         if parser_blocklist:
             self.log.info(f"Ignoring output from the following parsers matching: {parser_blocklist}")
+
+    def get_details(self, parser_path) -> Dict[str, str]:
+        # Determine framework
+        module = self.parsers[parser_path]
+        for fw_name, fw_class in self.FRAMEWORK_LIBRARY_MAPPING.items():
+            if fw_class.validate(module):
+                # Extract details about parser
+                return {
+                    'framework': fw_name,
+                    'classification': fw_class.get_classification(parser_path),
+                    'name': fw_class.get_name(parser_path)
+                }
+        return None
 
     def run_parsers(self, sample, parser_blocklist=[]):
         results = dict()
