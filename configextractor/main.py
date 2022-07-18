@@ -37,6 +37,7 @@ class ConfigExtractor:
         self.parsers = dict()
         yara_rules = list()
         self.standalone_parsers = defaultdict(list)
+        block_regex = regex.compile('|'.join(parser_blocklist)) if parser_blocklist else None
         for _, module_name, ispkg in pkgutil.walk_packages(mod.__path__, mod.__name__ + "."):
             if ispkg:
                 # skip __init__.py
@@ -57,6 +58,8 @@ class ConfigExtractor:
                 for member in candidates:
                     try:
                         if fw_class.validate(member):
+                            if block_regex and block_regex.match(member.__name__):
+                                continue
                             self.parsers[module.__file__] = member
                             rules = fw_class.extract_yara_from_module(member, module.__file__)
                             if not rules:
@@ -91,6 +94,7 @@ class ConfigExtractor:
         results = dict()
         parsers_to_run = defaultdict(lambda: defaultdict(list))
         parser_names = list()
+        block_regex = regex.compile('|'.join(parser_blocklist)) if parser_blocklist else None
 
         # Get YARA-dependents parsers that should run based on match
         for yara_match in self.yara.match(sample):
@@ -100,12 +104,19 @@ class ConfigExtractor:
             parser_names.append(yara_match.meta.get('parser_name'))
 
             parser_module = self.parsers[parser_path]
+            if block_regex and block_regex.match(parser_module.__name__):
+                self.log.info(f'Blocking {parser_module.__name__} based on passed blocklist regex list')
+                continue
             # Pass in yara.Match objects since some framework can leverage it
             parsers_to_run[parser_framework][parser_module].append(yara_match)
 
         # Add standalone parsers that should run on any file
         for parser_framework, parser_list in self.standalone_parsers.items():
-            [parsers_to_run[parser_framework][parser].extend([]) for parser in parser_list]
+            for parser in parser_list:
+                if block_regex and block_regex.match(parser.__name__):
+                    self.log.info(f'Blocking {parser.__name__} based on passed blocklist regex list')
+                    continue
+                parsers_to_run[parser_framework][parser].extend([])
 
         for framework, parser_list in parsers_to_run.items():
             if parser_list:
