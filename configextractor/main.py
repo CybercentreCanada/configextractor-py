@@ -24,6 +24,9 @@ class ConfigExtractor:
         self.FRAMEWORK_LIBRARY_MAPPING = {fw_cls.__name__: fw_cls(
             logger, yara_attr) for fw_cls, yara_attr in PARSER_FRAMEWORKS}
 
+        self.parsers = dict()
+        yara_rules = list()
+        self.standalone_parsers = defaultdict(list)
         for parsers_dir in parsers_dirs:
             self.log.debug('Adding directories within parser directory in case of local dependencies')
             self.log.debug(f'Adding {os.path.join(parsers_dir, os.pardir)} to PATH')
@@ -35,9 +38,6 @@ class ConfigExtractor:
             mod = importlib.import_module(foldername)
 
             # walk packages in the extractors directory to find all extactors
-            self.parsers = dict()
-            yara_rules = list()
-            self.standalone_parsers = defaultdict(list)
             block_regex = regex.compile('|'.join(parser_blocklist)) if parser_blocklist else None
             for _, module_name, ispkg in pkgutil.walk_packages(mod.__path__, mod.__name__ + "."):
                 if ispkg:
@@ -70,13 +70,13 @@ class ConfigExtractor:
                                     yara_rules.extend(rules)
                         except Exception as e:
                             self.log.error(f"{member}: {e}")
-            self.yara = yara.compile(source='\n'.join(yara_rules))
+        self.yara = yara.compile(source='\n'.join(yara_rules))
 
-            self.log.debug(f"# of YARA-dependent parsers: {len(self.parsers)}")
-            self.log.debug(f"# of YARA rules extracted from parsers: {len(yara_rules)}")
-            [self.log.debug(f"# of standalone {k} parsers: {len(v)}") for k, v in self.standalone_parsers.items()]
-            if parser_blocklist:
-                self.log.info(f"Ignoring output from the following parsers matching: {parser_blocklist}")
+        self.log.debug(f"# of YARA-dependent parsers: {len(self.parsers)}")
+        self.log.debug(f"# of YARA rules extracted from parsers: {len(yara_rules)}")
+        [self.log.debug(f"# of standalone {k} parsers: {len(v)}") for k, v in self.standalone_parsers.items()]
+        if parser_blocklist:
+            self.log.info(f"Ignoring output from the following parsers matching: {parser_blocklist}")
 
     def get_details(self, parser_path) -> Dict[str, str]:
         # Determine framework

@@ -23,9 +23,8 @@ def main(parsers_paths, sample_paths, block, verbosity) -> None:
     results = dict()
     for sample_path in sample_paths:
         if os.path.isfile(sample_path):
-            results = cx.run_parsers(sample_path)
+            results[sample_path] = cx.run_parsers(sample_path)
         else:
-            results = dict()
             # Iterate over directory
             for root, _, files in os.walk(sample_path):
                 for file in files:
