@@ -30,6 +30,7 @@ class ConfigExtractor:
         # Find extractors (taken from MaCo's Collector class)
         path_parent, foldername = os.path.split(parsers_dir)
         sys.path.insert(1, path_parent)
+        sys.path.insert(1, parsers_dir)
         mod = importlib.import_module(foldername)
 
         # walk packages in the extractors directory to find all extactors
