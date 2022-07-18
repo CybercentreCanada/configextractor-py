@@ -18,8 +18,8 @@ class Framework():
 
     @staticmethod
     # Get name of module
-    def get_name(module: Any) -> str:
-        NotImplementedError()
+    def get_name(module):
+        return module.__name__.split('.')[-1]
 
     # Extract YARA rules from module
     def extract_yara_from_module(self, decoder: object, parser_path: str) -> List[str]:

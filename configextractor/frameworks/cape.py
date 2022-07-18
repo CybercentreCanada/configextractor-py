@@ -14,9 +14,6 @@ class CAPE(Framework):
             return module.TLP
         return None
 
-    def get_name(module):
-        return module.__name__.split('.')[-1]
-
     def validate(self, module):
         return hasattr(module, 'extract_config')
 

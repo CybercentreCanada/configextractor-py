@@ -8,10 +8,6 @@ from mwcp import Parser
 
 
 class MWCP(Framework):
-    @staticmethod
-    def get_name(module):
-        return module.__name__
-
     def validate(self, parser):
         if inspect.isclass(parser):
             return issubclass(parser, Parser) and (parser.AUTHOR or parser.DESCRIPTION)

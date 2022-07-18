@@ -15,10 +15,6 @@ class MACO(Framework):
         # No standard for classification in MaCo format
         return None
 
-    @staticmethod
-    def get_name(module):
-        return module.__name__
-
     def validate(self, module: Any) -> bool:
         if inspect.isclass(module):
             return issubclass(module, Extractor)
