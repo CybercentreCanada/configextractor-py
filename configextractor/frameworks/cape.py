@@ -25,11 +25,10 @@ class CAPE(Framework):
             try:
                 result = parser.extract_config(open(sample_path, 'rb').read())
                 if result:
-                    # Just throw everthing into other for now
                     results.update({parser_name: {
                         'author': parser.AUTHOR,
                         'description': parser.DESCRIPTION or "",
-                        'config': ExtractorModel(other=result, family=parser_name).dict(skip_defaults=True)
+                        'config': ExtractorModel(**result).dict(skip_defaults=True)
                     }})
             except Exception as e:
                 self.log.error(f"{parser_name}: {e}")

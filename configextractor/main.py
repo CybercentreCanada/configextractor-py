@@ -13,7 +13,7 @@ from configextractor.frameworks import CAPE, MACO, MWCP
 from logging import getLogger, Logger
 from typing import Dict
 
-PARSER_FRAMEWORKS = [(CAPE, 'rule_source'), (MACO, 'yara_rule'), (MWCP, None)]
+PARSER_FRAMEWORKS = [(CAPE, 'rule_source'), (MACO, 'yara_rule'), (MWCP, 'yara_rule')]
 
 
 class ConfigExtractor:
