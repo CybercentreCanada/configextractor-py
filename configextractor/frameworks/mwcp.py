@@ -2,14 +2,61 @@
 
 import inspect
 import mwcp
+import regex
 
 from configextractor.frameworks.base import Framework
 from mwcp import Parser
+from maco.model import ExtractorModel, ConnUsageEnum, Encryption
+
+
+IP_REGEX_ONLY = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+
+CONN_USAGE = [k.name for k in ConnUsageEnum]
+ENC_USAGE = [k.name for k in Encryption.UsageEnum]
 
 
 def convert_to_MACO(metadata: list) -> dict:
+    def handle_socket(meta: dict) -> dict:
+        net_protocol = meta.get('network_protocol') or 'tcp'
+        host, port = meta['address'], None
+        if ":" in host:
+            host, port = meta['address'].split(':', 1)
+        else:
+            port = meta['port']
+        server_key = 'server_ip' if regex.match(IP_REGEX_ONLY, host) else 'server_domain'
+        if net_protocol in ['tcp', 'udp']:
+            conn = {
+                server_key: host,
+                'usage': 'c2' if meta.get('c2') else conn_usage
+            }
+            if port:
+                conn.update({'server_port': port})
+            net_list = config.setdefault(net_protocol, [])
+            if conn not in net_list:
+                net_list.append(conn)
+
+    def handle_encryption(meta: dict) -> dict:
+        # Encryption
+        enc = {
+            'algorithm': meta.get('algorithm'),
+            'public_key': meta['key'],
+            'mode': meta.get('mode'),
+            'iv': meta.get('iv'),
+            'usage': enc_usage
+        }
+        enc_list = config.setdefault('encryption', [])
+        if enc not in enc_list:
+            enc_list.append(enc)
+
     config = {}
     for meta in metadata:
+        # Determine the default connection if not a C2
+        conn_usage = [t for t in meta['tags'] if t in CONN_USAGE] or ['other']
+        conn_usage = conn_usage[0]  # Use the first element to define connection usage
+
+        enc_usage = [t for t in meta['tags'] if t in ENC_USAGE] or ['other']
+        enc_usage = enc_usage[0]  # Use the first element to define encryption usage
+
         if meta['type'] == 'alphabet':
             # BaseXX alphabet
             True
@@ -29,33 +76,23 @@ def convert_to_MACO(metadata: list) -> dict:
         elif meta['type'] == 'decoded_string':
             # Decoded strings
             config.setdefault('decoded_strings', []).append(meta['value'])
-            encryption = meta['encryption_key']
-            if encryption:
-                config.setdefault('encryption', []).append({
-                    'algorithm': encryption.get('algorithm'),
-                    'public_key': encryption['key'],
-                    'mode': encryption.get('mode'),
-                    'iv': encryption.get('iv')
-                })
+            if meta['encryption_key']:
+                handle_encryption(meta['encryption_key'])
         elif meta['type'] == 'email_address':
             # Email addresses
             # TODO incorporate found email addresses into model
             config.setdefault('other', {})['email_address'] = meta['value']
         elif meta['type'] == 'encryption_key':
             # Encryption
-            config.setdefault('encryption', []).append({
-                'algorithm': encryption.get('algorithm'),
-                'public_key': encryption['key'],
-                'mode': encryption.get('mode'),
-                'iv': encryption.get('iv')
-            })
+            handle_encryption(meta)
         elif meta['type'] == 'event':
             # System Events
             # TODO incorporate System Events into model
             config.setdefault('other', {})['event'] = meta['value']
         elif meta['type'] == 'injection_process':
             # Victim Process
-            config.setdefault('inject_exe', []).append(meta['value'])
+            if meta['value'] and meta['value'] not in ['None']:
+                config.setdefault('inject_exe', []).append(meta['value'])
         elif meta['type'] == 'interval':
             # Interval associated to malware
             config.setdefault('sleep_delay', []).append(meta['value'])
@@ -84,31 +121,39 @@ def convert_to_MACO(metadata: list) -> dict:
             })
         elif meta['type'] == 'socket':
             # Socket
-            net_protocol = meta.get('network_protocol', 'tcp')
-            if net_protocol in ['tcp', 'udp']:
-                config.setdefault(net_protocol, []).append({
-                    'server_ip': meta['address'],
-                    'server_port': meta['port'],
-                    'usage': 'c2' if meta.get('c2') else 'other'
-                })
+            handle_socket(meta)
         elif meta['type'] == 'url':
-            # URL
-            config.setdefault('http', []).append({
-                'uri': meta.get('url'),
-                'path': meta.get('path'),
-                'query': meta.get('query'),
-                'protocol': meta.get('application_protocol'),
-                'username': meta.get('credential', {}).get('username'),
-                'password': meta.get('credential', {}).get('password')
-            })
-            if meta.get('socket'):
-                net_protocol = meta['socket'].get('network_protocol', 'tcp')
-                if net_protocol in ['tcp', 'udp']:
-                    config.setdefault(net_protocol, []).append({
-                        'server_ip': meta['socket']['address'],
-                        'server_port': meta['socket']['port'],
-                        'usage': 'c2' if meta['socket'].get('c2') else 'other'
+            # Connections with
+            if meta.get('url'):
+                # RFC 3986 URL
+                http = {
+                    'uri': meta.get('url'),
+                    'path': meta.get('path'),
+                    'query': meta.get('query'),
+                    'usage': 'c2' if meta.get('socket', {}).get('c2', False) else conn_usage
+                }
+                if meta.get('application_protocol'):
+                    http.update({'protocol': meta['application_protocol']})
+                if meta.get('credential'):
+                    http.update({
+                        'username': meta['credential'].get('username'),
+                        'password': meta['credential'].get('password')
                     })
+                config.setdefault('http', []).append(http)
+            socket = meta.get('socket')
+            if socket:
+                if meta['application_protocol'] and meta['application_protocol'].lower() == 'smtp':
+                    # SMTP Connection
+                    smtp = {
+                        'hostname': socket.get('address'),
+                        'usage': conn_usage
+                    }
+                    if meta.get('credential'):
+                        cred = meta['credential']
+                        smtp.update({'username': cred.get('username'), 'password': cred.get('password')})
+                    config.setdefault('smtp', []).append(smtp)
+                else:
+                    handle_socket(socket)
         elif meta['type'] == 'user_agent':
             # User Agent
             config.setdefault('http', []).append({
@@ -121,8 +166,15 @@ def convert_to_MACO(metadata: list) -> dict:
             # Version of malware
             config['version'] = meta['value']
         elif meta['type'] == 'other':
-            # Catch-all
-            config.setdefault('other', {})[meta['key']] = meta['value']
+            if meta['key'].lower() == 'family':
+                config['family'] = meta['value']
+            elif 'capability' in meta['tags']:
+                state = 'enabled' if meta['value'] else 'disabled'
+                config.setdefault(f'capability_{state}', []).append(meta['key'].lower())
+            else:
+                # Catch-all
+                config.setdefault('other', {})[meta['key']] = meta['value']
+    return config
 
 
 class MWCP(Framework):
@@ -133,15 +185,15 @@ class MWCP(Framework):
     def run(self, sample_path, parsers):
         results = dict()
 
-        for parser, yara_matches in parsers.items():
+        for parser, _ in parsers.items():
             parser_name = MWCP.get_name(parser)
             try:
                 # Just run MWCP parsers directly, using the filename to fetch the class attribute from module
-                result = mwcp.run(parser, data=open(sample_path, 'rb').read()).as_dict()
+                result = mwcp.run(parser, data=open(sample_path, 'rb').read())
                 if result:
-                    [self.log.error(e) for e in result.get('errors', [])]
-                    if result.get('metadata'):
-                        return results.update({parser.__name__: result})
+                    [self.log.error(e) for e in result.errors]
+                    if result.metadata:
+                        results.update({parser.__name__: convert_to_MACO(result.as_json_dict()['metadata'])})
             except Exception as e:
                 self.log.error(f"{parser_name}: {e}")
         return results
