@@ -107,7 +107,7 @@ def convert_to_MACO(metadata: list) -> dict:
             config.setdefault('paths', []).append({'path': meta['path']})
         elif meta['type'] == 'pipe':
             # Pipes
-            config.setdefault('pipe', []).append({'path': meta['value']})
+            config.setdefault('pipe', []).append(meta['value'])
         elif meta['type'] == 'registry':
             # Registry
             config.setdefault('registry', []).append({'key': meta['value']})
@@ -185,7 +185,7 @@ class MWCP(Framework):
     def run(self, sample_path, parsers):
         results = dict()
 
-        for parser, _ in parsers.items():
+        for parser, yara_matches in parsers.items():
             parser_name = MWCP.get_name(parser)
             try:
                 # Just run MWCP parsers directly, using the filename to fetch the class attribute from module
@@ -193,7 +193,15 @@ class MWCP(Framework):
                 if result:
                     [self.log.error(e) for e in result.errors]
                     if result.metadata:
-                        results.update({parser.__name__: convert_to_MACO(result.as_json_dict()['metadata'])})
+                        result = convert_to_MACO(result.as_json_dict()['metadata'])
+                        family = parser.__name__
+                        for y in yara_matches:
+                            if y.meta.get('malware'):
+                                family = y.meta['malware']
+                                break
+                            True
+                        result['family'] = family
+                        results.update({parser.__name__: ExtractorModel(**result).dict(skip_defaults=True)})
             except Exception as e:
                 self.log.error(f"{parser_name}: {e}")
         return results

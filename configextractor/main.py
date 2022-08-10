@@ -122,6 +122,8 @@ class ConfigExtractor:
         for framework, parser_list in parsers_to_run.items():
             if parser_list:
                 self.log.debug(f'Running the following under the {framework} framework with YARA: {parser_names}')
-                results[framework] = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(sample, parser_list)
+                result = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(sample, parser_list)
+                if result:
+                    results[framework] = result
 
         return results
