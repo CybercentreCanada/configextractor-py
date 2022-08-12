@@ -30,6 +30,7 @@ class ConfigExtractor:
         for parsers_dir in parsers_dirs:
             self.log.debug('Adding directories within parser directory in case of local dependencies')
             self.log.debug(f'Adding {os.path.join(parsers_dir, os.pardir)} to PATH')
+            not_py = [file for _, _, files in os.walk(parsers_dir) for file in files if not file.endswith('py') and not file.endswith('pyc')]
 
             # Find extractors (taken from MaCo's Collector class)
             path_parent, foldername = os.path.split(parsers_dir)
@@ -44,6 +45,14 @@ class ConfigExtractor:
                     # skip __init__.py
                     continue
 
+                if module_name.endswith('.setup'):
+                    # skip setup.py
+                    continue
+
+                if any([module_name.split('.')[-1] in np for np in not_py]):
+                    # skip non-Python files
+                    continue
+
                 self.log.debug(f"Inspecting '{module_name}' for extractors")
                 # raise an exception if one of the potential extractors can't be imported
                 # note that excluding an extractor through include/exclude does not prevent it being imported
@@ -54,7 +63,7 @@ class ConfigExtractor:
                     continue
 
                 # Determine if module contains parsers of a supported framework
-                candidates = [module] + [member for _, member in inspect.getmembers(module)]
+                candidates = [module] + [member for _, member in inspect.getmembers(module) if inspect.isclass(member)]
                 for fw_name, fw_class in self.FRAMEWORK_LIBRARY_MAPPING.items():
                     for member in candidates:
                         try:
