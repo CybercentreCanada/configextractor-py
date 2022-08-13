@@ -194,14 +194,16 @@ class MWCP(Framework):
                     [self.log.error(e) for e in result.errors]
                     if result.metadata:
                         result = convert_to_MACO(result.as_json_dict()['metadata'])
-                        family = parser.__name__
-                        for y in yara_matches:
-                            if y.meta.get('malware'):
-                                family = y.meta['malware']
-                                break
-                            True
-                        result['family'] = family
-                        results.update({parser.__name__: ExtractorModel(**result).dict(skip_defaults=True)})
+                        if result or yara_matches:
+                            family = parser.__name__
+                            for y in yara_matches:
+                                if y.meta.get('malware'):
+                                    family = y.meta['malware']
+                                    break
+                                True
+
+                            result['family'] = family
+                            results.update({parser.__name__: ExtractorModel(**result).dict(skip_defaults=True)})
             except Exception as e:
                 self.log.error(f"{parser_name}: {e}")
         return results
