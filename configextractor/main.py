@@ -17,7 +17,7 @@ PARSER_FRAMEWORKS = [(CAPE, 'rule_source'), (MACO, 'yara_rule'), (MWCP, 'yara_ru
 
 
 class ConfigExtractor:
-    def __init__(self, parsers_dirs: list, logger: Logger = None, parser_blocklist=[], check_extension=True) -> None:
+    def __init__(self, parsers_dirs: list, logger: Logger = None, parser_blocklist=[]) -> None:
         if not logger:
             logger = getLogger()
         self.log = logger
