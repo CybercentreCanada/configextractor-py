@@ -27,7 +27,7 @@ class CAPE(Framework):
                 if result:
                     results.update({parser_name: {
                         'author': parser.AUTHOR,
-                        'description': parser.DESCRIPTION or "",
+                        'description': parser.DESCRIPTION,
                         'config': ExtractorModel(**result).dict(skip_defaults=True)
                     }})
             except Exception as e:

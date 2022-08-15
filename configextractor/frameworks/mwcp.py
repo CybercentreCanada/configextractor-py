@@ -203,7 +203,11 @@ class MWCP(Framework):
                                 True
 
                             result['family'] = family
-                            results.update({parser.__name__: ExtractorModel(**result).dict(skip_defaults=True)})
+                            results.update({parser.__name__: {
+                                'author': parser.AUTHOR,
+                                'description': parser.DESCRIPTION,
+                                'config': ExtractorModel(**result).dict(skip_defaults=True)
+                            }})
             except Exception as e:
                 self.log.error(f"{parser_name}: {e}")
         return results
