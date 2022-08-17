@@ -17,20 +17,19 @@ ENC_USAGE = [k.name for k in Encryption.UsageEnum]
 
 def convert_to_MACO(metadata: list) -> dict:
     def handle_socket(meta: dict) -> dict:
-        net_protocol = meta.get('network_protocol') or 'tcp'
-        host, port = meta['address'], None
+        net_protocol = meta.get("network_protocol") or "tcp"
+        host, port = meta["address"], None
         if ":" in host:
-            host, port = meta['address'].split(':', 1)
+            host, port = meta["address"].split(":", 1)
         else:
-            port = meta['port']
-        server_key = 'server_ip' if regex.match(IP_REGEX_ONLY, host) else 'server_domain'
-        if net_protocol in ['tcp', 'udp']:
-            conn = {
-                server_key: host,
-                'usage': 'c2' if meta.get('c2') else conn_usage
-            }
+            port = meta["port"]
+        server_key = (
+            "server_ip" if regex.match(IP_REGEX_ONLY, host) else "server_domain"
+        )
+        if net_protocol in ["tcp", "udp"]:
+            conn = {server_key: host, "usage": "c2" if meta.get("c2") else conn_usage}
             if port:
-                conn.update({'server_port': port})
+                conn.update({"server_port": int(port)})
             net_list = config.setdefault(net_protocol, [])
             if conn not in net_list:
                 net_list.append(conn)
@@ -38,142 +37,150 @@ def convert_to_MACO(metadata: list) -> dict:
     def handle_encryption(meta: dict) -> dict:
         # Encryption
         enc = {
-            'algorithm': meta.get('algorithm'),
-            'public_key': meta['key'],
-            'mode': meta.get('mode'),
-            'iv': meta.get('iv'),
-            'usage': enc_usage
+            "algorithm": meta.get("algorithm"),
+            "public_key": meta["key"],
+            "mode": meta.get("mode"),
+            "iv": meta.get("iv"),
+            "usage": enc_usage,
         }
-        enc_list = config.setdefault('encryption', [])
+        enc_list = config.setdefault("encryption", [])
         if enc not in enc_list:
             enc_list.append(enc)
 
     config = {}
     for meta in metadata:
         # Determine the default connection if not a C2
-        conn_usage = [t for t in meta['tags'] if t in CONN_USAGE] or ['other']
+        conn_usage = [t for t in meta["tags"] if t in CONN_USAGE] or ["other"]
         conn_usage = conn_usage[0]  # Use the first element to define connection usage
 
-        enc_usage = [t for t in meta['tags'] if t in ENC_USAGE] or ['other']
+        enc_usage = [t for t in meta["tags"] if t in ENC_USAGE] or ["other"]
         enc_usage = enc_usage[0]  # Use the first element to define encryption usage
 
-        if meta['type'] == 'alphabet':
+        if meta["type"] == "alphabet":
             # BaseXX alphabet
             True
-        elif meta['type'] == 'command':
+        elif meta["type"] == "command":
             # Shell commands
             # TODO incorporate Shell commands into model
             True
-        elif meta['type'] == 'credential' and meta.get('password'):
+        elif meta["type"] == "credential" and meta.get("password"):
             # Credentials
-            config.setdefault("passwords", []).append(meta['password'])
-        elif meta['type'] == 'crypto_address':
+            config.setdefault("password", []).append(meta["password"])
+        elif meta["type"] == "crypto_address":
             # Cryptocurrent Addresses
-            config.setdefault('cryptocurrency', []).append({
-                'address': meta['address'],
-                'coin': meta.get('symbol')
-            })
-        elif meta['type'] == 'decoded_string':
+            config.setdefault("cryptocurrency", []).append(
+                {"address": meta["address"], "coin": meta.get("symbol")}
+            )
+        elif meta["type"] == "decoded_string":
             # Decoded strings
-            config.setdefault('decoded_strings', []).append(meta['value'])
-            if meta['encryption_key']:
-                handle_encryption(meta['encryption_key'])
-        elif meta['type'] == 'email_address':
+            config.setdefault("decoded_strings", []).append(meta["value"])
+            if meta["encryption_key"]:
+                handle_encryption(meta["encryption_key"])
+        elif meta["type"] == "email_address":
             # Email addresses
             # TODO incorporate found email addresses into model
-            config.setdefault('other', {})['email_address'] = meta['value']
-        elif meta['type'] == 'encryption_key':
+            config.setdefault("other", {})["email_address"] = meta["value"]
+        elif meta["type"] == "encryption_key":
             # Encryption
             handle_encryption(meta)
-        elif meta['type'] == 'event':
+        elif meta["type"] == "event":
             # System Events
             # TODO incorporate System Events into model
-            config.setdefault('other', {})['event'] = meta['value']
-        elif meta['type'] == 'injection_process':
+            config.setdefault("other", {})["event"] = meta["value"]
+        elif meta["type"] == "injection_process":
             # Victim Process
-            if meta['value'] and meta['value'] not in ['None']:
-                config.setdefault('inject_exe', []).append(meta['value'])
-        elif meta['type'] == 'interval':
+            if meta["value"] and meta["value"] not in ["None"]:
+                config.setdefault("inject_exe", []).append(meta["value"])
+        elif meta["type"] == "interval":
             # Interval associated to malware
-            config.setdefault('sleep_delay', []).append(meta['value'])
-        elif meta['type'] == 'mission_id':
+            config.setdefault("sleep_delay", []).append(meta["value"])
+        elif meta["type"] == "mission_id":
             # Campaign ID
-            config.setdefault('campaign_id', []).append(meta['value'])
-        elif meta['type'] == 'mutex':
+            config.setdefault("campaign_id", []).append(meta["value"])
+        elif meta["type"] == "mutex":
             # Mutex
-            config.setdefault('mutex', []).append(meta['value'])
-        elif meta['type'] == 'path':
+            config.setdefault("mutex", []).append(meta["value"])
+        elif meta["type"] == "path":
             # File path
-            config.setdefault('paths', []).append({'path': meta['path']})
-        elif meta['type'] == 'pipe':
+            config.setdefault("paths", []).append({"path": meta["path"]})
+        elif meta["type"] == "pipe":
             # Pipes
-            config.setdefault('pipe', []).append(meta['value'])
-        elif meta['type'] == 'registry':
+            config.setdefault("pipe", []).append(meta["value"])
+        elif meta["type"] == "registry":
             # Registry
-            config.setdefault('registry', []).append({'key': meta['value']})
-        elif meta['type'] == 'service':
+            config.setdefault("registry", []).append({"key": meta["value"]})
+        elif meta["type"] == "service":
             # Windows service
-            config.setdefault('service', []).append({
-                'dll': meta.get('dll'),
-                'name': meta.get('name'),
-                'display_name': meta.get('display_name'),
-                'description': meta.get('description')
-            })
-        elif meta['type'] == 'socket':
+            config.setdefault("service", []).append(
+                {
+                    "dll": meta.get("dll"),
+                    "name": meta.get("name"),
+                    "display_name": meta.get("display_name"),
+                    "description": meta.get("description"),
+                }
+            )
+        elif meta["type"] == "socket":
             # Socket
             handle_socket(meta)
-        elif meta['type'] == 'url':
+        elif meta["type"] == "url":
             # Connections with
-            if meta.get('url'):
+            if meta.get("url"):
                 # RFC 3986 URL
                 http = {
-                    'uri': meta.get('url'),
-                    'path': meta.get('path'),
-                    'query': meta.get('query'),
-                    'usage': 'c2' if meta.get('socket', {}).get('c2', False) else conn_usage
+                    "uri": meta.get("url"),
+                    "path": meta.get("path"),
+                    "query": meta.get("query"),
+                    "usage": "c2"
+                    if meta.get("socket", {}).get("c2", False)
+                    else conn_usage,
                 }
-                if meta.get('application_protocol'):
-                    http.update({'protocol': meta['application_protocol']})
-                if meta.get('credential'):
-                    http.update({
-                        'username': meta['credential'].get('username'),
-                        'password': meta['credential'].get('password')
-                    })
-                config.setdefault('http', []).append(http)
-            socket = meta.get('socket')
+                if meta.get("application_protocol"):
+                    http.update({"protocol": meta["application_protocol"]})
+                if meta.get("credential"):
+                    http.update(
+                        {
+                            "username": meta["credential"].get("username"),
+                            "password": meta["credential"].get("password"),
+                        }
+                    )
+                config.setdefault("http", []).append(http)
+            socket = meta.get("socket")
             if socket:
-                if meta['application_protocol'] and meta['application_protocol'].lower() == 'smtp':
+                if (
+                    meta["application_protocol"]
+                    and meta["application_protocol"].lower() == "smtp"
+                ):
                     # SMTP Connection
-                    smtp = {
-                        'hostname': socket.get('address'),
-                        'usage': conn_usage
-                    }
-                    if meta.get('credential'):
-                        cred = meta['credential']
-                        smtp.update({'username': cred.get('username'), 'password': cred.get('password')})
-                    config.setdefault('smtp', []).append(smtp)
+                    smtp = {"hostname": socket.get("address"), "usage": conn_usage}
+                    if meta.get("credential"):
+                        cred = meta["credential"]
+                        smtp.update(
+                            {
+                                "username": cred.get("username"),
+                                "password": cred.get("password"),
+                            }
+                        )
+                    config.setdefault("smtp", []).append(smtp)
                 else:
                     handle_socket(socket)
-        elif meta['type'] == 'user_agent':
+        elif meta["type"] == "user_agent":
             # User Agent
-            config.setdefault('http', []).append({
-                'user_agent': meta['value']
-            })
-        elif meta['type'] == 'uuid':
+            config.setdefault("http", []).append({"user_agent": meta["value"]})
+        elif meta["type"] == "uuid":
             # UUID
-            config['identifier'] = meta['value']
-        elif meta['type'] == 'version':
+            config["identifier"] = meta["value"]
+        elif meta["type"] == "version":
             # Version of malware
-            config['version'] = meta['value']
-        elif meta['type'] == 'other':
-            if meta['key'].lower() == 'family':
-                config['family'] = meta['value']
-            elif 'capability' in meta['tags']:
-                state = 'enabled' if meta['value'] else 'disabled'
-                config.setdefault(f'capability_{state}', []).append(meta['key'].lower())
+            config["version"] = meta["value"]
+        elif meta["type"] == "other":
+            if meta["key"].lower() == "family":
+                config["family"] = meta["value"]
+            elif "capability" in meta["tags"]:
+                state = "enabled" if meta["value"] else "disabled"
+                config.setdefault(f"capability_{state}", []).append(meta["key"].lower())
             else:
                 # Catch-all
-                config.setdefault('other', {})[meta['key']] = meta['value']
+                config.setdefault("other", {})[meta["key"]] = meta["value"]
     return config
 
 
@@ -189,25 +196,31 @@ class MWCP(Framework):
             parser_name = MWCP.get_name(parser)
             try:
                 # Just run MWCP parsers directly, using the filename to fetch the class attribute from module
-                result = mwcp.run(parser, data=open(sample_path, 'rb').read())
+                result = mwcp.run(parser, data=open(sample_path, "rb").read())
                 if result:
                     [self.log.error(e) for e in result.errors]
                     if result.metadata:
-                        result = convert_to_MACO(result.as_json_dict()['metadata'])
+                        result = convert_to_MACO(result.as_json_dict()["metadata"])
                         if result or yara_matches:
                             family = parser.__name__
                             for y in yara_matches:
-                                if y.meta.get('malware'):
-                                    family = y.meta['malware']
+                                if y.meta.get("malware"):
+                                    family = y.meta["malware"]
                                     break
                                 True
 
-                            result['family'] = family
-                            results.update({parser.__name__: {
-                                'author': parser.AUTHOR,
-                                'description': parser.DESCRIPTION,
-                                'config': ExtractorModel(**result).dict(skip_defaults=True)
-                            }})
+                            result["family"] = family
+                            results.update(
+                                {
+                                    parser.__name__: {
+                                        "author": parser.AUTHOR,
+                                        "description": parser.DESCRIPTION,
+                                        "config": ExtractorModel(**result).dict(
+                                            skip_defaults=True
+                                        ),
+                                    }
+                                }
+                            )
             except Exception as e:
                 self.log.error(f"{parser_name}: {e}")
         return results

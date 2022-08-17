@@ -26,13 +26,15 @@ class MACO(Framework):
                 decoder = decoder_module()
                 # Run MaCo parser with YARA matches
                 results[decoder.name] = {
-                    'author': decoder.author,
-                    'description': decoder.__doc__,
-                    'config': {},
+                    "author": decoder.author,
+                    "description": decoder.__doc__,
+                    "config": {},
                 }
-                result = decoder.run(open(sample_path, 'rb'), matches=yara_matches)
+                result = decoder.run(open(sample_path, "rb"), matches=yara_matches)
                 if result:
-                    results[decoder.name].update({'config': result.dict(skip_defaults=True)})
+                    results[decoder.name].update(
+                        {"config": result.dict(skip_defaults=True)}
+                    )
             except Exception as e:
                 self.log.error(e)
             finally:
