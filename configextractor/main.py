@@ -13,7 +13,7 @@ from configextractor.frameworks import CAPE, MACO, MWCP
 from logging import getLogger, Logger
 from typing import Dict
 
-PARSER_FRAMEWORKS = [(CAPE, 'rule_source'), (MACO, 'yara_rule'), (MWCP, 'yara_rule')]
+PARSER_FRAMEWORKS = [(MACO, 'yara_rule'), (MWCP, 'yara_rule'), (CAPE, 'rule_source')]
 
 
 class ConfigExtractor:
@@ -30,7 +30,8 @@ class ConfigExtractor:
         for parsers_dir in parsers_dirs:
             self.log.debug('Adding directories within parser directory in case of local dependencies')
             self.log.debug(f'Adding {os.path.join(parsers_dir, os.pardir)} to PATH')
-            not_py = [file for _, _, files in os.walk(parsers_dir) for file in files if not file.endswith('py') and not file.endswith('pyc')]
+            not_py = [file for _, _, files in os.walk(parsers_dir) for file in files
+                      if not file.endswith('py') and not file.endswith('pyc')]
 
             # Find extractors (taken from MaCo's Collector class)
             path_parent, foldername = os.path.split(parsers_dir)
@@ -64,8 +65,8 @@ class ConfigExtractor:
 
                 # Determine if module contains parsers of a supported framework
                 candidates = [module] + [member for _, member in inspect.getmembers(module) if inspect.isclass(member)]
-                for fw_name, fw_class in self.FRAMEWORK_LIBRARY_MAPPING.items():
-                    for member in candidates:
+                for member in candidates:
+                    for fw_name, fw_class in self.FRAMEWORK_LIBRARY_MAPPING.items():
                         try:
                             if fw_class.validate(member):
                                 if block_regex and block_regex.match(member.__name__):
@@ -77,6 +78,7 @@ class ConfigExtractor:
                                     self.standalone_parsers[fw_name].append(member)
                                 else:
                                     yara_rules.extend(rules)
+                                break
                         except Exception as e:
                             self.log.error(f"{member}: {e}")
         self.yara = yara.compile(source='\n'.join(yara_rules))
