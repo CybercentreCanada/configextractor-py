@@ -33,7 +33,7 @@ class MACO(Framework):
                 result = decoder.run(open(sample_path, "rb"), matches=yara_matches)
                 if result:
                     results[decoder.name].update(
-                        {"config": result.dict(skip_defaults=True)}
+                        {"config": result.dict(exclude_defaults=True, exclude_none=True)}
                     )
             except Exception as e:
                 self.log.error(e)

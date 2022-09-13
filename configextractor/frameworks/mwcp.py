@@ -215,9 +215,7 @@ class MWCP(Framework):
                                     parser.__name__: {
                                         "author": parser.AUTHOR,
                                         "description": parser.DESCRIPTION,
-                                        "config": ExtractorModel(**result).dict(
-                                            skip_defaults=True
-                                        ),
+                                        "config": ExtractorModel(**result).dict(exclude_defaults=True, exclude_none=True),
                                     }
                                 }
                             )
