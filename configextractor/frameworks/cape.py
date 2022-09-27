@@ -1,10 +1,6 @@
 # CAPE framework
-import plyara
-import yara
-
 from configextractor.frameworks.base import Framework
 from maco.model import ExtractorModel
-from plyara.utils import rebuild_yara_rule
 
 
 class CAPE(Framework):

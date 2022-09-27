@@ -1,11 +1,8 @@
 import inspect
-import plyara
-import yara
 
 
 from configextractor.frameworks.base import Framework
 from maco.extractor import Extractor
-from plyara.utils import rebuild_yara_rule
 from typing import Any, List, Dict
 
 
@@ -24,11 +21,16 @@ class MACO(Framework):
         for decoder_module, yara_matches in parsers.items():
             try:
                 decoder = decoder_module()
+                config = {}
+                if hasattr(decoder, 'family') and decoder.family:
+                    config['family'] = decoder.family
+                else:
+                    config['family'] = decoder.__class__.__name__
                 # Run MaCo parser with YARA matches
                 results[decoder.name] = {
                     "author": decoder.author,
                     "description": decoder.__doc__,
-                    "config": {},
+                    "config": config,
                 }
                 result = decoder.run(open(sample_path, "rb"), matches=yara_matches)
                 if result:
