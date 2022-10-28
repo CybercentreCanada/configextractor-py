@@ -1,6 +1,7 @@
 # CAPE framework
 from configextractor.frameworks.base import Framework
 from maco.model import ExtractorModel
+from collections import defaultdict
 
 
 class CAPE(Framework):
@@ -14,16 +15,16 @@ class CAPE(Framework):
         return hasattr(module, "extract_config")
 
     def run(self, sample_path, parsers):
-        results = dict()
+        results = defaultdict(dict)
         for parser, yara_matches in parsers.items():
             # Just run CAPE parsers as-is
             parser_name = CAPE.get_name(parser)
             try:
-                results[parser_name] = {
+                results[parser_name].update({
                     "author": parser.AUTHOR,
                     "description": parser.DESCRIPTION,
                     "config": {},
-                }
+                })
                 result = parser.extract_config(open(sample_path, "rb").read())
                 if result:
                     results[parser_name].update({
