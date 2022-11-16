@@ -195,6 +195,11 @@ class MWCP(Framework):
         for parser, yara_matches in parsers.items():
             parser_name = MWCP.get_name(parser)
             try:
+                results[parser_name] = {
+                    "author": parser.AUTHOR,
+                    "description": parser.DESCRIPTION,
+                    "config": {},
+                }
                 # Just run MWCP parsers directly, using the filename to fetch the class attribute from module
                 result = mwcp.run(parser, data=open(sample_path, "rb").read())
                 if result:
@@ -202,23 +207,23 @@ class MWCP(Framework):
                     if result.metadata:
                         result = convert_to_MACO(result.as_json_dict()["metadata"])
                         if result or yara_matches:
-                            family = parser.__name__
+                            family = parser_name
                             for y in yara_matches:
                                 if y.meta.get("malware"):
                                     family = y.meta["malware"]
                                     break
-                                True
 
                             result["family"] = family
-                            results.update(
-                                {
-                                    parser.__name__: {
-                                        "author": parser.AUTHOR,
-                                        "description": parser.DESCRIPTION,
-                                        "config": ExtractorModel(**result).dict(exclude_defaults=True, exclude_none=True),
-                                    }
-                                }
-                            )
+                            results[parser_name].update({
+                                "config": ExtractorModel(**result).dict(exclude_defaults=True, exclude_none=True),
+                            })
+                elif yara_matches:
+                    # YARA rules matched, but no configuration extracted
+                    continue
+                else:
+                    # No result
+                    results.pop(parser_name, None)
             except Exception as e:
+                results[parser_name]['exception'] = str(e)
                 self.log.error(f"{parser_name}: {e}")
         return results

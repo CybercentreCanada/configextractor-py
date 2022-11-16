@@ -37,7 +37,15 @@ class MACO(Framework):
                     results[decoder.name].update(
                         {"config": result.dict(exclude_defaults=True, exclude_none=True)}
                     )
+                elif yara_matches:
+                    # YARA rules matched, but no configuration extracted
+                    continue
+                else:
+                    # No result
+                    results.pop(decoder.name, None)
             except Exception as e:
+                # Add exception to results
+                results[decoder.name]['exception'] = str(e)
                 self.log.error(e)
             finally:
                 break
