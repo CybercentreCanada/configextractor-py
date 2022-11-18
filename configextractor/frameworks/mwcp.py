@@ -217,6 +217,9 @@ class MWCP(Framework):
                             results[parser_name].update({
                                 "config": ExtractorModel(**result).dict(exclude_defaults=True, exclude_none=True),
                             })
+
+                    if not results[parser_name]['config']:
+                        results.pop(parser_name, None)
                 elif yara_matches:
                     # YARA rules matched, but no configuration extracted
                     continue
