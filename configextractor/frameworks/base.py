@@ -23,14 +23,11 @@ class Framework:
 
     # Extract YARA rules from module
     def extract_yara_from_module(self, decoder: object, parser_path: str) -> List[str]:
-        if self.yara_attr_name and hasattr(decoder, self.yara_attr_name):
+        if self.yara_attr_name and hasattr(decoder, self.yara_attr_name) and getattr(decoder, self.yara_attr_name):
             yara_rules = list()
             # Modify YARA rule to include meta about the parser
             yara_parser = plyara.Plyara()
-            for yara_rule_frag in yara_parser.parse_string(
-                getattr(decoder, self.yara_attr_name)
-            ):
-
+            for yara_rule_frag in yara_parser.parse_string(getattr(decoder, self.yara_attr_name)):
                 # If this rule came with no metadata then instantiate it
                 if not yara_rule_frag.get("metadata"):
                     yara_rule_frag["metadata"] = list()
