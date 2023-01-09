@@ -11,7 +11,7 @@ from collections import defaultdict
 from configextractor.frameworks import CAPE, MACO, MWCP
 
 from logging import getLogger, Logger
-from typing import Dict
+from typing import Dict, List
 
 PARSER_FRAMEWORKS = [(MACO, 'yara_rule'), (MWCP, 'yara_rule'), (CAPE, 'rule_source')]
 
@@ -102,6 +102,17 @@ class ConfigExtractor:
                 }
         return None
 
+    def finalize(self, results: List[dict]):
+        # Ensure schemes/protocol are present in HTTP configurations
+        for config in results.values():
+            config = config.get('config', {})
+            for network_conn in config.get('http', []):
+                network_conn.setdefault('protocol', 'http')
+                uri: str = network_conn.get('uri')
+                if uri and not uri.startswith(network_conn['protocol']):
+                    # Ensure URI starts with protocol
+                    network_conn['uri'] = f"{network_conn['protocol']}://{uri}"
+
     def run_parsers(self, sample, parser_blocklist=[]):
         results = dict()
         parsers_to_run = defaultdict(lambda: defaultdict(list))
@@ -134,6 +145,7 @@ class ConfigExtractor:
             if parser_list:
                 self.log.debug(f'Running the following under the {framework} framework with YARA: {parser_names}')
                 result = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(sample, parser_list)
+                self.finalize(result)
                 if result:
                     results[framework] = result
 
