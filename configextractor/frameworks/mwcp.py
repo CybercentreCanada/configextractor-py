@@ -129,11 +129,17 @@ def convert_to_MACO(metadata: list) -> dict:
                 http = {
                     "uri": meta.get("url"),
                     "path": meta.get("path"),
-                    "query": meta.get("query"),
                     "usage": "c2"
                     if meta.get("socket", {}).get("c2", False)
                     else conn_usage,
                 }
+
+                # Strip ending ':' in URIs
+                if http['uri'] and http['uri'].endswith(':'):
+                    http['uri'] = http['uri'][:-1]
+
+                if meta.get("query"):
+                    http.update({'query': meta['query']})
                 if meta.get("application_protocol"):
                     http.update({"protocol": meta["application_protocol"]})
                 if meta.get("credential"):
