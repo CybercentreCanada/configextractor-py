@@ -79,6 +79,8 @@ class ConfigExtractor:
                                 else:
                                     yara_rules.extend(rules)
                                 break
+                        except TypeError:
+                            pass
                         except Exception as e:
                             self.log.error(f"{member}: {e}")
         self.yara = yara.compile(source='\n'.join(yara_rules))
