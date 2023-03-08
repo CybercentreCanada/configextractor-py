@@ -4,7 +4,9 @@ import inspect
 import os
 import pkgutil
 import regex
+import shutil
 import sys
+import tempfile
 import yara
 
 from collections import defaultdict
@@ -35,9 +37,22 @@ class ConfigExtractor:
 
             # Find extractors (taken from MaCo's Collector class)
             path_parent, foldername = os.path.split(parsers_dir)
+            original_dir = parsers_dir
             sys.path.insert(1, path_parent)
             sys.path.insert(1, parsers_dir)
             mod = importlib.import_module(foldername)
+
+            if mod.__file__ and not mod.__file__.startswith(parsers_dir):
+                # Library confused folder name with installed package
+                sys.path.remove(path_parent)
+                sys.path.remove(parsers_dir)
+                parsers_dir = tempfile.TemporaryDirectory().name
+                shutil.copytree(original_dir, parsers_dir, dirs_exist_ok=True)
+
+                path_parent, foldername = os.path.split(parsers_dir)
+                sys.path.insert(1, path_parent)
+                sys.path.insert(1, parsers_dir)
+                mod = importlib.import_module(foldername)
 
             # walk packages in the extractors directory to find all extactors
             block_regex = regex.compile('|'.join(parser_blocklist)) if parser_blocklist else None
@@ -53,7 +68,6 @@ class ConfigExtractor:
                 if any([module_name.split('.')[-1] in np for np in not_py]):
                     # skip non-Python files
                     continue
-
                 self.log.debug(f"Inspecting '{module_name}' for extractors")
                 # raise an exception if one of the potential extractors can't be imported
                 # note that excluding an extractor through include/exclude does not prevent it being imported
@@ -64,7 +78,8 @@ class ConfigExtractor:
                     continue
 
                 # Determine if module contains parsers of a supported framework
-                candidates = [module] + [member for _, member in inspect.getmembers(module) if inspect.isclass(member)]
+                candidates = [module] + [member for _,
+                                         member in inspect.getmembers(module) if inspect.isclass(member)]
                 for member in candidates:
                     for fw_name, fw_class in self.FRAMEWORK_LIBRARY_MAPPING.items():
                         try:
@@ -83,8 +98,22 @@ class ConfigExtractor:
                             pass
                         except Exception as e:
                             self.log.error(f"{member}: {e}")
-        self.yara = yara.compile(source='\n'.join(yara_rules))
 
+                # Correct metadata in YARA rules
+                if original_dir != parsers_dir:
+                    yara_rules = [rule.replace(parsers_dir, original_dir) for rule in yara_rules]
+
+            if original_dir != parsers_dir:
+                # Correct the paths to the parsers to match metadata changes
+                sys.path.remove(path_parent)
+                sys.path.remove(parsers_dir)
+                path_parent, _ = os.path.split(original_dir)
+                sys.path.insert(1, path_parent)
+                sys.path.insert(1, original_dir)
+                self.parsers = {k.replace(parsers_dir, original_dir): v for k, v in self.parsers.items()}
+                shutil.rmtree(parsers_dir)
+
+        self.yara = yara.compile(source='\n'.join(yara_rules))
         self.log.debug(f"# of YARA-dependent parsers: {len(self.parsers)}")
         self.log.debug(f"# of YARA rules extracted from parsers: {len(yara_rules)}")
         [self.log.debug(f"# of standalone {k} parsers: {len(v)}") for k, v in self.standalone_parsers.items()]
