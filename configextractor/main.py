@@ -28,6 +28,7 @@ class ConfigExtractor:
 
         self.parsers = dict()
         yara_rules = list()
+        yara_rule_names = list()
         self.standalone_parsers = defaultdict(list)
         for parsers_dir in parsers_dirs:
             self.log.debug('Adding directories within parser directory in case of local dependencies')
@@ -87,7 +88,7 @@ class ConfigExtractor:
                                 if block_regex and block_regex.match(member.__name__):
                                     continue
                                 self.parsers[module.__file__] = member
-                                rules = fw_class.extract_yara_from_module(member, module.__file__)
+                                rules = fw_class.extract_yara_from_module(member, module.__file__, yara_rule_names)
                                 if not rules:
                                     # Standalone parser, need to know what framework to run under
                                     self.standalone_parsers[fw_name].append(member)
