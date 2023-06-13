@@ -2,7 +2,7 @@
 from configextractor.frameworks.base import Framework
 from maco.model import ExtractorModel
 from collections import defaultdict
-
+from inspect import signature
 
 class CAPE(Framework):
     @staticmethod
@@ -12,7 +12,7 @@ class CAPE(Framework):
         return None
 
     def validate(self, module):
-        return hasattr(module, "extract_config")
+        return hasattr(module, "extract_config") and len(signature(module.extract_config).parameters) == 1
 
     def run(self, sample_path, parsers):
         results = defaultdict(dict)
@@ -21,8 +21,8 @@ class CAPE(Framework):
             parser_name = CAPE.get_name(parser)
             try:
                 results[parser_name].update({
-                    "author": parser.AUTHOR,
-                    "description": parser.DESCRIPTION,
+                    "author": parser.AUTHOR if hasattr(parser, 'AUTHOR') else '<MISSING_AUTHOR>',
+                    "description": parser.DESCRIPTION if hasattr(parser, 'DESCRIPTION') else '<MISSING_DESCRIPTION>',
                     "config": {},
                 })
                 result = parser.extract_config(open(sample_path, "rb").read())
