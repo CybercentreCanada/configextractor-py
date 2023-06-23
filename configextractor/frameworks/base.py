@@ -1,9 +1,9 @@
+from logging import Logger
+from typing import Any, Dict, List
+
 import plyara
 import yara
-
-from logging import Logger
 from plyara.utils import rebuild_yara_rule
-from typing import Any, List, Dict
 
 
 class Framework:
@@ -31,10 +31,10 @@ class Framework:
                 # If this rule came with no metadata then instantiate it
                 if not yara_rule_frag.get("metadata"):
                     yara_rule_frag["metadata"] = list()
-                yara_rule_name = yara_rule_frag['rule_name']
+                yara_rule_name = yara_rule_frag["rule_name"]
                 yara_rule_frag["metadata"].extend(
                     [
-                        {'yara_identifier': yara_rule_name},
+                        {"yara_identifier": yara_rule_name},
                         {"parser_path": parser_path},
                         {"parser_framework": self.__class__.__name__.upper()},
                         {"parser_name": decoder.__name__},
@@ -43,7 +43,9 @@ class Framework:
 
                 # Modify the name of the rule to avoid duplicate identifiers during compilation
                 if yara_rule_name in existing_rule_names:
-                    yara_rule_frag['rule_name'] = f"{yara_rule_name}_{len([i for i in existing_rule_names if i.startswith(yara_rule_name)])}"
+                    yara_rule_frag[
+                        "rule_name"
+                    ] = f"{yara_rule_name}_{len([i for i in existing_rule_names if i.startswith(yara_rule_name)])}"
 
                 existing_rule_names.append(yara_rule_name)
                 rebuilt_rule = rebuild_yara_rule(yara_rule_frag)
@@ -59,7 +61,5 @@ class Framework:
         NotImplementedError()
 
     # Run a series of modules
-    def run(
-        self, sample_path: str, parsers: Dict[Any, List[yara.Match]]
-    ) -> Dict[str, dict]:
+    def run(self, sample_path: str, parsers: Dict[Any, List[yara.Match]]) -> Dict[str, dict]:
         return NotImplementedError()

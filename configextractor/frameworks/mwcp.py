@@ -1,13 +1,15 @@
 # MWCP framework
 
 import inspect
+from typing import Any, Dict, List
+
 import mwcp
 import regex
+import yara
+from maco.model import ConnUsageEnum, Encryption, ExtractorModel
+from mwcp import Parser
 
 from configextractor.frameworks.base import Framework
-from mwcp import Parser
-from maco.model import ExtractorModel, ConnUsageEnum, Encryption
-
 
 IP_REGEX_ONLY = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
 
@@ -23,9 +25,7 @@ def convert_to_MACO(metadata: list) -> dict:
             host, port = meta["address"].split(":", 1)
         else:
             port = meta["port"]
-        server_key = (
-            "server_ip" if regex.match(IP_REGEX_ONLY, host) else "server_domain"
-        )
+        server_key = "server_ip" if regex.match(IP_REGEX_ONLY, host) else "server_domain"
         if net_protocol in ["tcp", "udp"]:
             conn = {server_key: host, "usage": "c2" if meta.get("c2") else conn_usage}
             if port:
@@ -68,9 +68,7 @@ def convert_to_MACO(metadata: list) -> dict:
             config.setdefault("password", []).append(meta["password"])
         elif meta["type"] == "crypto_address":
             # Cryptocurrent Addresses
-            config.setdefault("cryptocurrency", []).append(
-                {"address": meta["address"], "coin": meta.get("symbol")}
-            )
+            config.setdefault("cryptocurrency", []).append({"address": meta["address"], "coin": meta.get("symbol")})
         elif meta["type"] == "decoded_string":
             # Decoded strings
             config.setdefault("decoded_strings", []).append(meta["value"])
@@ -129,17 +127,15 @@ def convert_to_MACO(metadata: list) -> dict:
                 http = {
                     "uri": meta.get("url"),
                     "path": meta.get("path"),
-                    "usage": "c2"
-                    if meta.get("socket", {}).get("c2", False)
-                    else conn_usage,
+                    "usage": "c2" if meta.get("socket", {}).get("c2", False) else conn_usage,
                 }
 
                 # Strip ending ':' in URIs
-                if http['uri'] and http['uri'].endswith(':'):
-                    http['uri'] = http['uri'][:-1]
+                if http["uri"] and http["uri"].endswith(":"):
+                    http["uri"] = http["uri"][:-1]
 
                 if meta.get("query"):
-                    http.update({'query': meta['query']})
+                    http.update({"query": meta["query"]})
                 if meta.get("application_protocol"):
                     http.update({"protocol": meta["application_protocol"]})
                 if meta.get("credential"):
@@ -152,10 +148,7 @@ def convert_to_MACO(metadata: list) -> dict:
                 config.setdefault("http", []).append(http)
             socket = meta.get("socket")
             if socket:
-                if (
-                    meta["application_protocol"]
-                    and meta["application_protocol"].lower() == "smtp"
-                ):
+                if meta["application_protocol"] and meta["application_protocol"].lower() == "smtp":
                     # SMTP Connection
                     smtp = {"hostname": socket.get("address"), "usage": conn_usage}
                     if meta.get("credential"):
@@ -195,7 +188,7 @@ class MWCP(Framework):
         if inspect.isclass(parser):
             return issubclass(parser, Parser) and (parser.AUTHOR or parser.DESCRIPTION)
 
-    def run(self, sample_path, parsers):
+    def run(self, sample_path: str, parsers: Dict[Any, List[yara.Match]]) -> Dict[str, dict]:
         results = dict()
 
         for parser, yara_matches in parsers.items():
@@ -220,11 +213,13 @@ class MWCP(Framework):
                                     break
 
                             result["family"] = family
-                            results[parser_name].update({
-                                "config": ExtractorModel(**result).dict(exclude_defaults=True, exclude_none=True),
-                            })
+                            results[parser_name].update(
+                                {
+                                    "config": ExtractorModel(**result).dict(exclude_defaults=True, exclude_none=True),
+                                }
+                            )
 
-                    if not results[parser_name]['config']:
+                    if not results[parser_name]["config"]:
                         results.pop(parser_name, None)
                 elif yara_matches:
                     # YARA rules matched, but no configuration extracted
@@ -233,6 +228,6 @@ class MWCP(Framework):
                     # No result
                     results.pop(parser_name, None)
             except Exception as e:
-                results[parser_name]['exception'] = str(e)
+                results[parser_name]["exception"] = str(e)
                 self.log.error(f"{parser_name}: {e}")
         return results
