@@ -1,4 +1,4 @@
 click
-mwcfg
+malduck
 mwcp
 malwareconfig
