@@ -47,6 +47,4 @@ class MACO(Framework):
                 # Add exception to results
                 results[decoder.name]['exception'] = str(e)
                 self.log.error(e)
-            finally:
-                break
         return results
