@@ -9,8 +9,8 @@ from typing import Any, List, Dict
 class MACO(Framework):
     @staticmethod
     def get_classification(module):
-        # No standard for classification in MaCo format
-        return None
+        if hasattr(module, 'sharing'):
+            return module.sharing
 
     def validate(self, module: Any) -> bool:
         if inspect.isclass(module):
