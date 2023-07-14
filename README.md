@@ -12,6 +12,7 @@ a wrapper for popular malware configuration data decoders from:
 - RATDecoder: https://github.com/kevthehermit/RATDecoders [MIT license]
 - CAPE Sandbox: https://github.com/kevoreilly/CAPEv2/ [GPL license] (many thanks to @kevoreilly for releasing so many open source parsers).
 - MWCFG : https://github.com/c3rb3ru5d3d53c/mwcfg [BSD 3-Clause License]
+- malduck 🦆: https://github.com/CERT-Polska/malduck [GPL license]
 
 ## Installation Guide
 

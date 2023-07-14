@@ -1,4 +1,4 @@
-# RATDECODER framework
+# RATDECODER framework (not officially supported)
 
 import inspect
 import os
