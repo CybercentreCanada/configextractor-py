@@ -92,19 +92,20 @@ class ConfigExtractor:
                     # skip non-Python files
                     continue
                 self.log.debug(f"Inspecting '{module_name}' for extractors")
-                # raise an exception if one of the potential extractors can't be imported
-                # note that excluding an extractor through include/exclude does not prevent it being imported
+
+                # Local site packages, if any, need to be loaded before attempting to import the module
+                parser_site_packages = find_site_packages(module_path.path)
+                if parser_site_packages:
+                    sys.path.insert(1, parser_site_packages)
                 try:
-                    # Local site packages, if any, need to be loaded before attempting to import the module
-                    parser_site_packages = find_site_packages(module_path.path)
-                    if parser_site_packages:
-                        sys.path.insert(1, parser_site_packages)
                     module = importlib.import_module(module_name)
                 except Exception as e:
+                    # Log if there was an error importing module
                     self.log.error(f"{module_name}: {e}")
                     continue
                 finally:
-                    sys.path.remove(parser_site_packages)
+                    if parser_site_packages in sys.path:
+                        sys.path.remove(parser_site_packages)
 
                 # Determine if module contains parsers of a supported framework
                 candidates = [module] + [member for _,
