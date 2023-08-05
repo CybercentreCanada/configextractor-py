@@ -17,6 +17,7 @@ from typing import Dict, List
 
 PARSER_FRAMEWORKS = [(MACO, 'yara_rule'), (MWCP, 'yara_rule'), (CAPE, 'rule_source')]
 
+
 class ConfigExtractor:
     def __init__(self, parsers_dirs: list, logger: Logger = None, parser_blocklist=[]) -> None:
         if not logger:
@@ -116,8 +117,8 @@ class ConfigExtractor:
                             if fw_class.validate(member):
                                 if block_regex and block_regex.match(member.__name__):
                                     continue
-                                self.parsers[module_name] = member
-                                rules = fw_class.extract_yara_from_module(member, module_name, yara_rule_names)
+                                self.parsers[module.__file__] = member
+                                rules = fw_class.extract_yara_from_module(member, module.__file__, yara_rule_names)
                                 if not rules:
                                     # Standalone parser, need to know what framework to run under
                                     self.standalone_parsers[fw_name].add(member)
@@ -183,11 +184,11 @@ class ConfigExtractor:
         # Get YARA-dependents parsers that should run based on match
         for yara_match in self.yara.match(sample):
             # Retrieve relevant parser information
-            parser_module = yara_match.meta.get('parser_module')
+            parser_path = yara_match.meta.get('parser_path')
             parser_framework = yara_match.meta.get('parser_framework')
             parser_names.append(yara_match.meta.get('parser_name'))
 
-            parser_module = self.parsers[parser_module]
+            parser_module = self.parsers[parser_path]
             if block_regex and block_regex.match(parser_module.__name__):
                 self.log.info(f'Blocking {parser_module.__name__} based on passed blocklist regex list')
                 continue
