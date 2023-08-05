@@ -116,8 +116,8 @@ class ConfigExtractor:
                             if fw_class.validate(member):
                                 if block_regex and block_regex.match(member.__name__):
                                     continue
-                                self.parsers[member.__module__] = member
-                                rules = fw_class.extract_yara_from_module(member, yara_rule_names)
+                                self.parsers[module_name] = member
+                                rules = fw_class.extract_yara_from_module(member, module_name, yara_rule_names)
                                 if not rules:
                                     # Standalone parser, need to know what framework to run under
                                     self.standalone_parsers[fw_name].add(member)
