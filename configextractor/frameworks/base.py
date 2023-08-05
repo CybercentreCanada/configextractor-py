@@ -22,7 +22,7 @@ class Framework:
         return module.__name__.split(".")[-1]
 
     # Extract YARA rules from module
-    def extract_yara_from_module(self, decoder: object, parser_path: str, existing_rule_names=[]) -> List[str]:
+    def extract_yara_from_module(self, decoder: object, existing_rule_names=[]) -> List[str]:
         if self.yara_attr_name and hasattr(decoder, self.yara_attr_name) and getattr(decoder, self.yara_attr_name):
             yara_rules = list()
             # Modify YARA rule to include meta about the parser
@@ -35,7 +35,7 @@ class Framework:
                 yara_rule_frag["metadata"].extend(
                     [
                         {'yara_identifier': yara_rule_name},
-                        {"parser_path": parser_path},
+                        {"parser_module": decoder.__module__},
                         {"parser_framework": self.__class__.__name__.upper()},
                         {"parser_name": decoder.__name__},
                     ]
@@ -51,7 +51,7 @@ class Framework:
                     yara.compile(source=rebuilt_rule)
                     yara_rules.append(rebuilt_rule)
                 except Exception as e:
-                    self.log.error(f"{parser_path}: {e}")
+                    self.log.error(f"{decoder}: {e}")
             return yara_rules
 
     # Validate module against framework

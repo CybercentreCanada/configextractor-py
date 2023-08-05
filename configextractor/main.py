@@ -17,7 +17,6 @@ from typing import Dict, List
 
 PARSER_FRAMEWORKS = [(MACO, 'yara_rule'), (MWCP, 'yara_rule'), (CAPE, 'rule_source')]
 
-
 class ConfigExtractor:
     def __init__(self, parsers_dirs: list, logger: Logger = None, parser_blocklist=[]) -> None:
         if not logger:
@@ -35,6 +34,14 @@ class ConfigExtractor:
             self.log.debug(f'Adding {os.path.join(parsers_dir, os.pardir)} to PATH')
             not_py = [file for _, _, files in os.walk(parsers_dir) for file in files
                       if not file.endswith('py') and not file.endswith('pyc')]
+
+            # Specific feature for Assemblyline or environments wanting to run parsers from different sources
+            # The goal is to try and introduce package isolation/specification similar to a virtual environment when running parsers
+            local_site_packages = None
+            if 'site-packages' in os.listdir(parsers_dir):
+                # Found 'site-packages' directory in root of parser directory
+                # Assume this is to be used for all parsers therein unless indicated otherwise
+                local_site_packages = os.path.join(parsers_dir, 'site-packages')
 
             # Find extractors (taken from MaCo's Collector class)
             path_parent, foldername = os.path.split(parsers_dir)
@@ -57,7 +64,22 @@ class ConfigExtractor:
 
             # walk packages in the extractors directory to find all extactors
             block_regex = regex.compile('|'.join(parser_blocklist)) if parser_blocklist else None
-            for _, module_name, ispkg in pkgutil.walk_packages(mod.__path__, mod.__name__ + "."):
+            for module_path, module_name, ispkg in pkgutil.walk_packages(mod.__path__, mod.__name__ + "."):
+
+                def find_site_packages(path: str) -> str:
+                    parent_dir = os.path.dirname(path)
+                    if parent_dir == parsers_dir:
+                        # We made it all the way back to the parser directory
+                        # Use root site-packages, if any
+                        return local_site_packages
+                    elif 'site-packages' in os.listdir(parent_dir):
+                        # We found a site-packages before going back to the root of the parser directory
+                        # Assume that because it's the closest, it's the most relevant
+                        return os.path.join(parent_dir, 'site-packages')
+                    else:
+                        # Keep searching in the parent directory for a venv
+                        return find_site_packages(parent_dir)
+
                 if ispkg:
                     # skip __init__.py
                     continue
@@ -73,10 +95,16 @@ class ConfigExtractor:
                 # raise an exception if one of the potential extractors can't be imported
                 # note that excluding an extractor through include/exclude does not prevent it being imported
                 try:
+                    # Local site packages, if any, need to be loaded before attempting to import the module
+                    parser_site_packages = find_site_packages(module_path.path)
+                    if parser_site_packages:
+                        sys.path.insert(1, parser_site_packages)
                     module = importlib.import_module(module_name)
                 except Exception as e:
-                    self.log.error(e)
+                    self.log.error(f"{module_name}: {e}")
                     continue
+                finally:
+                    sys.path.remove(parser_site_packages)
 
                 # Determine if module contains parsers of a supported framework
                 candidates = [module] + [member for _,
@@ -87,8 +115,8 @@ class ConfigExtractor:
                             if fw_class.validate(member):
                                 if block_regex and block_regex.match(member.__name__):
                                     continue
-                                self.parsers[module.__file__] = member
-                                rules = fw_class.extract_yara_from_module(member, module.__file__, yara_rule_names)
+                                self.parsers[member.__module__] = member
+                                rules = fw_class.extract_yara_from_module(member, yara_rule_names)
                                 if not rules:
                                     # Standalone parser, need to know what framework to run under
                                     self.standalone_parsers[fw_name].add(member)
@@ -154,11 +182,11 @@ class ConfigExtractor:
         # Get YARA-dependents parsers that should run based on match
         for yara_match in self.yara.match(sample):
             # Retrieve relevant parser information
-            parser_path = yara_match.meta.get('parser_path')
+            parser_module = yara_match.meta.get('parser_module')
             parser_framework = yara_match.meta.get('parser_framework')
             parser_names.append(yara_match.meta.get('parser_name'))
 
-            parser_module = self.parsers[parser_path]
+            parser_module = self.parsers[parser_module]
             if block_regex and block_regex.match(parser_module.__name__):
                 self.log.info(f'Blocking {parser_module.__name__} based on passed blocklist regex list')
                 continue
