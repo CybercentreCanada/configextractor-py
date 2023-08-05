@@ -68,7 +68,7 @@ class ConfigExtractor:
 
                 def find_site_packages(path: str) -> str:
                     parent_dir = os.path.dirname(path)
-                    if parent_dir == parsers_dir:
+                    if parent_dir == parsers_dir or path == parsers_dir:
                         # We made it all the way back to the parser directory
                         # Use root site-packages, if any
                         return local_site_packages
