@@ -1,7 +1,4 @@
 click
-maco
 mwcfg
 mwcp
 malwareconfig
-plyara
-regex
