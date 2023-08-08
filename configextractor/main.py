@@ -36,6 +36,14 @@ class ConfigExtractor:
             not_py = [file for _, _, files in os.walk(parsers_dir) for file in files
                       if not file.endswith('py') and not file.endswith('pyc')]
 
+            # Specific feature for Assemblyline or environments wanting to run parsers from different sources
+            # The goal is to try and introduce package isolation/specification similar to a virtual environment when running parsers
+            local_site_packages = None
+            if 'site-packages' in os.listdir(parsers_dir):
+                # Found 'site-packages' directory in root of parser directory
+                # Assume this is to be used for all parsers therein unless indicated otherwise
+                local_site_packages = os.path.join(parsers_dir, 'site-packages')
+
             # Find extractors (taken from MaCo's Collector class)
             path_parent, foldername = os.path.split(parsers_dir)
             original_dir = parsers_dir
@@ -57,7 +65,22 @@ class ConfigExtractor:
 
             # walk packages in the extractors directory to find all extactors
             block_regex = regex.compile('|'.join(parser_blocklist)) if parser_blocklist else None
-            for _, module_name, ispkg in pkgutil.walk_packages(mod.__path__, mod.__name__ + "."):
+            for module_path, module_name, ispkg in pkgutil.walk_packages(mod.__path__, mod.__name__ + "."):
+
+                def find_site_packages(path: str) -> str:
+                    parent_dir = os.path.dirname(path)
+                    if parent_dir == parsers_dir or path == parsers_dir:
+                        # We made it all the way back to the parser directory
+                        # Use root site-packages, if any
+                        return local_site_packages
+                    elif 'site-packages' in os.listdir(parent_dir):
+                        # We found a site-packages before going back to the root of the parser directory
+                        # Assume that because it's the closest, it's the most relevant
+                        return os.path.join(parent_dir, 'site-packages')
+                    else:
+                        # Keep searching in the parent directory for a venv
+                        return find_site_packages(parent_dir)
+
                 if ispkg:
                     # skip __init__.py
                     continue
@@ -70,13 +93,20 @@ class ConfigExtractor:
                     # skip non-Python files
                     continue
                 self.log.debug(f"Inspecting '{module_name}' for extractors")
-                # raise an exception if one of the potential extractors can't be imported
-                # note that excluding an extractor through include/exclude does not prevent it being imported
+
+                # Local site packages, if any, need to be loaded before attempting to import the module
+                parser_site_packages = find_site_packages(module_path.path)
+                if parser_site_packages:
+                    sys.path.insert(1, parser_site_packages)
                 try:
                     module = importlib.import_module(module_name)
                 except Exception as e:
-                    self.log.error(e)
+                    # Log if there was an error importing module
+                    self.log.error(f"{module_name}: {e}")
                     continue
+                finally:
+                    if parser_site_packages in sys.path:
+                        sys.path.remove(parser_site_packages)
 
                 # Determine if module contains parsers of a supported framework
                 candidates = [module] + [member for _,
