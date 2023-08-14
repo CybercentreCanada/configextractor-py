@@ -1,4 +1,5 @@
 # Main module for ConfigExtractor library
+import cart
 import importlib
 import inspect
 import os
@@ -151,34 +152,47 @@ class ConfigExtractor:
         parser_names = list()
         block_regex = regex.compile('|'.join(parser_blocklist)) if parser_blocklist else None
 
-        # Get YARA-dependents parsers that should run based on match
-        for yara_match in self.yara.match(sample):
-            # Retrieve relevant parser information
-            parser_path = yara_match.meta.get('parser_path')
-            parser_framework = yara_match.meta.get('parser_framework')
-            parser_names.append(yara_match.meta.get('parser_name'))
+        with tempfile.NamedTemporaryFile() as sample_copy:
+            # Make a copy of the sample that will be cleaned up after analysis is complete
+            with open(sample, 'rb') as fp:
+                buf = fp.read()
 
-            parser_module = self.parsers[parser_path]
-            if block_regex and block_regex.match(parser_module.__name__):
-                self.log.info(f'Blocking {parser_module.__name__} based on passed blocklist regex list')
-                continue
-            # Pass in yara.Match objects since some framework can leverage it
-            parsers_to_run[parser_framework][parser_module].append(yara_match)
+            if cart.is_cart(buf):
+                # Uncart file to temporary location for analysis
+                cart.unpack_file(sample, sample_copy.name)
+            else:
+                # Make a copy of the file to the temporary location
+                sample_copy.write(buf)
 
-        # Add standalone parsers that should run on any file
-        for parser_framework, parser_list in self.standalone_parsers.items():
-            for parser in parser_list:
-                if block_regex and block_regex.match(parser.__name__):
-                    self.log.info(f'Blocking {parser.__name__} based on passed blocklist regex list')
+
+            # Get YARA-dependents parsers that should run based on match
+            for yara_match in self.yara.match(sample_copy.name):
+                # Retrieve relevant parser information
+                parser_path = yara_match.meta.get('parser_path')
+                parser_framework = yara_match.meta.get('parser_framework')
+                parser_names.append(yara_match.meta.get('parser_name'))
+
+                parser_module = self.parsers[parser_path]
+                if block_regex and block_regex.match(parser_module.__name__):
+                    self.log.info(f'Blocking {parser_module.__name__} based on passed blocklist regex list')
                     continue
-                parsers_to_run[parser_framework][parser].extend([])
+                # Pass in yara.Match objects since some framework can leverage it
+                parsers_to_run[parser_framework][parser_module].append(yara_match)
 
-        for framework, parser_list in parsers_to_run.items():
-            if parser_list:
-                self.log.debug(f'Running the following under the {framework} framework with YARA: {parser_names}')
-                result = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(sample, parser_list)
-                self.finalize(result)
-                if result:
-                    results[framework] = result
+            # Add standalone parsers that should run on any file
+            for parser_framework, parser_list in self.standalone_parsers.items():
+                for parser in parser_list:
+                    if block_regex and block_regex.match(parser.__name__):
+                        self.log.info(f'Blocking {parser.__name__} based on passed blocklist regex list')
+                        continue
+                    parsers_to_run[parser_framework][parser].extend([])
+
+            for framework, parser_list in parsers_to_run.items():
+                if parser_list:
+                    self.log.debug(f'Running the following under the {framework} framework with YARA: {parser_names}')
+                    result = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(sample_copy.name, parser_list)
+                    self.finalize(result)
+                    if result:
+                        results[framework] = result
 
         return results
