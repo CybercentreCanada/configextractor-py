@@ -20,15 +20,15 @@ import json
 import yara
 from .{module_name} import {module_class}
 
-result = {module_class}().run(open("{sample_path}", 'rb'), matches=yara.compile(source=\"\"\"{yara_rule}\"\"\").match("{sample_path}"))
+result = {module_class}().run(open("{sample_path}", 'rb'), matches=yara.compile("{yara_rule}").match("{sample_path}"))
 with open("{output_path}", 'w') as fp:
     json.dump(result.dict(exclude_defaults=True, exclude_none=True), fp)
 """
 
     @staticmethod
-    def get_classification(module):
-        if hasattr(module, 'sharing'):
-            return module.sharing
+    def get_classification(extractor: Extractor):
+        if hasattr(extractor.module, 'sharing'):
+            return extractor.module.sharing
 
     def validate(self, module: Any) -> bool:
         if inspect.isclass(module):

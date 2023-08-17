@@ -27,16 +27,16 @@ class Framework:
 
     @staticmethod
     # Get classification of module
-    def get_classification(module: Any) -> str:
+    def get_classification(extractor: Extractor) -> str:
         return None
 
     @staticmethod
     # Get name of module
-    def get_name(module):
-        return module.__name__.split(".")[-1]
+    def get_name(extractor: Extractor):
+        return extractor.module.__name__.split(".")[-1]
 
     # Extract YARA rules from module
-    def extract_yara_from_module(self, decoder: object, existing_rule_names=[]) -> List[str]:
+    def extract_yara_from_module(self, decoder: object, module_name: str, existing_rule_names=[]) -> List[str]:
         if self.yara_attr_name and hasattr(decoder, self.yara_attr_name) and getattr(decoder, self.yara_attr_name):
             yara_rules = list()
             # Modify YARA rule to include meta about the parser
@@ -49,7 +49,7 @@ class Framework:
                 yara_rule_frag["metadata"].extend(
                     [
                         {'yara_identifier': yara_rule_name},
-                        {"parser_module": decoder.__module__},
+                        {"parser_module": module_name},
                     ]
                 )
 
@@ -78,20 +78,23 @@ class Framework:
         # Write temporary script in the same directory as extractor to resolve relative imports
         python_exe = os.path.join(extractor.venv, 'bin', 'python')
         with NamedTemporaryFile('w', dir=os.path.dirname(extractor.module_path), suffix='.py') as script:
-            with NamedTemporaryFile() as output:
-                module_name = extractor.module.__module__.split('.')[-1]
-                module_class = extractor.module.__name__
-                script.write(self.venv_script.format(module_name=module_name,
-                                                     module_class=module_class,
-                                                     sample_path=sample_path,
-                                                     output_path=output.name,
-                                                     yara_rule=extractor.rule))
-                script.flush()
-                custom_module = script.name.split('.py')[0].replace(f'{extractor.root_directory}/', '').replace('/', '.')
-                proc = subprocess.run([python_exe, '-m', custom_module], cwd=extractor.root_directory, capture_output=True)
-                if proc.stderr:
-                    # If there was an error raised during runtime, then propagate
-                    raise Exception(proc.stderr)
-                # Load results and return them
-                output.seek(0)
-                return json.load(output)
+            with NamedTemporaryFile('w') as yara_rule:
+                yara_rule.write(extractor.rule)
+                yara_rule.flush()
+                with NamedTemporaryFile() as output:
+                    module_name = extractor.module.__module__.split('.')[-1]
+                    module_class = extractor.module.__name__
+                    script.write(self.venv_script.format(module_name=module_name,
+                                                        module_class=module_class,
+                                                        sample_path=sample_path,
+                                                        output_path=output.name,
+                                                        yara_rule=yara_rule.name))
+                    script.flush()
+                    custom_module = script.name.split('.py')[0].replace(f'{extractor.root_directory}/', '').replace('/', '.')
+                    proc = subprocess.run([python_exe, '-m', custom_module], cwd=extractor.root_directory, capture_output=True)
+                    if proc.stderr:
+                        # If there was an error raised during runtime, then propagate
+                        raise Exception(proc.stderr)
+                    # Load results and return them
+                    output.seek(0)
+                    return json.load(output)

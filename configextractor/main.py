@@ -121,7 +121,7 @@ class ConfigExtractor:
                             if fw_class.validate(member):
                                 if block_regex and block_regex.match(member.__name__):
                                     continue
-                                rules = fw_class.extract_yara_from_module(member, yara_rule_names)
+                                rules = fw_class.extract_yara_from_module(member, module_name, yara_rule_names)
                                 ext = Extractor(fw_name, member, module.__file__, parsers_dir, '\n'.join(rules), parser_venv)
                                 if not rules:
                                     # Standalone parser, need to know what framework to run under
@@ -156,18 +156,15 @@ class ConfigExtractor:
         if parser_blocklist:
             self.log.info(f"Ignoring output from the following parsers matching: {parser_blocklist}")
 
-    def get_details(self, parser_path) -> Dict[str, str]:
-        # Determine framework
-        module = self.parsers[parser_path]
-        for fw_name, fw_class in self.FRAMEWORK_LIBRARY_MAPPING.items():
-            if fw_class.validate(module):
-                # Extract details about parser
-                return {
-                    'framework': fw_name,
-                    'classification': fw_class.__class__.get_classification(module),
-                    'name': fw_class.__class__.get_name(module)
-                }
-        return None
+    def get_details(self, extractor: Extractor) -> Dict[str, str]:
+        fw_cls = self.FRAMEWORK_LIBRARY_MAPPING[extractor.framework]
+
+        # Extract details about parser
+        return {
+            'framework': extractor.framework,
+            'classification': fw_cls.__class__.get_classification(extractor),
+            'name': fw_cls.__class__.get_name(extractor)
+        }
 
     def finalize(self, results: List[dict]):
         # Ensure schemes/protocol are present in HTTP configurations
