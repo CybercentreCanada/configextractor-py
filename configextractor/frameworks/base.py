@@ -85,16 +85,18 @@ class Framework:
                     module_name = extractor.module.__module__.split('.')[-1]
                     module_class = extractor.module.__name__
                     script.write(self.venv_script.format(module_name=module_name,
-                                                        module_class=module_class,
-                                                        sample_path=sample_path,
-                                                        output_path=output.name,
-                                                        yara_rule=yara_rule.name))
+                                                         module_class=module_class,
+                                                         sample_path=sample_path,
+                                                         output_path=output.name,
+                                                         yara_rule=yara_rule.name))
                     script.flush()
                     custom_module = script.name.split('.py')[0].replace(f'{extractor.root_directory}/', '').replace('/', '.')
                     proc = subprocess.run([python_exe, '-m', custom_module], cwd=extractor.root_directory, capture_output=True)
                     if proc.stderr:
                         # If there was an error raised during runtime, then propagate
-                        raise Exception(proc.stderr)
+                        delim = f"File \"{extractor.module_path}\""
+                        exception = proc.stderr.decode().split(delim, 1)[1]
+                        raise Exception(f"{delim}{exception}")
                     # Load results and return them
                     output.seek(0)
                     return json.load(output)
