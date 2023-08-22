@@ -4,6 +4,7 @@ import plyara
 import subprocess
 import yara
 
+from base64 import b64decode
 from logging import Logger
 from plyara.utils import rebuild_yara_rule
 from tempfile import NamedTemporaryFile
@@ -92,11 +93,14 @@ class Framework:
                     script.flush()
                     custom_module = script.name.split('.py')[0].replace(f'{extractor.root_directory}/', '').replace('/', '.')
                     proc = subprocess.run([python_exe, '-m', custom_module], cwd=extractor.root_directory, capture_output=True)
-                    if proc.stderr:
+                    try:
+                        # Load results and return them
+                        output.seek(0)
+                        return json.load(output)
+                    except Exception:
                         # If there was an error raised during runtime, then propagate
                         delim = f"File \"{extractor.module_path}\""
-                        exception = proc.stderr.decode().split(delim, 1)[1]
-                        raise Exception(f"{delim}{exception}")
-                    # Load results and return them
-                    output.seek(0)
-                    return json.load(output)
+                        exception = proc.stderr.decode()
+                        if delim in exception:
+                            exception = f"{delim}{exception.split(delim, 1)[1]}"
+                        raise Exception(exception)

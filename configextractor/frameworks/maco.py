@@ -1,14 +1,11 @@
 import inspect
 from logging import Logger
-import os
-import json
-import subprocess
+from base64 import b64decode
 
 from configextractor.frameworks.base import Extractor, Framework
 from maco.extractor import Extractor as MACO_Extractor
 from maco.model import ExtractorModel
 
-from tempfile import NamedTemporaryFile
 from typing import Any, List, Dict
 
 
@@ -18,11 +15,18 @@ class MACO(Framework):
         self.venv_script = """
 import json
 import yara
+from base64 import b64encode
 from .{module_name} import {module_class}
+
+class Base64Encoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, bytes):
+            return b64encode(o).decode()
+        return json.JSONEncoder.default(self, o)
 
 result = {module_class}().run(open("{sample_path}", 'rb'), matches=yara.compile("{yara_rule}").match("{sample_path}"))
 with open("{output_path}", 'w') as fp:
-    json.dump(result.dict(exclude_defaults=True, exclude_none=True), fp)
+    json.dump(result.dict(exclude_defaults=True, exclude_none=True), fp, cls=Base64Encoder)
 """
 
     @staticmethod
@@ -74,4 +78,8 @@ with open("{output_path}", 'w') as fp:
 
     def run_in_venv(self, sample_path: str, extractor: Extractor) -> ExtractorModel:
         # Load results and apply them against the model
-        return ExtractorModel(**super().run_in_venv(sample_path, extractor))
+        result = super().run_in_venv(sample_path, extractor)
+        if result.get('binaries'):
+            # Decode base64-encoded binaries
+            result['binaries'] = [b64decode(b) for b in result['binaries']]
+        return ExtractorModel(**result)
