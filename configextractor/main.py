@@ -146,7 +146,9 @@ class ConfigExtractor:
                 path_parent, _ = os.path.split(original_dir)
                 sys.path.insert(1, path_parent)
                 sys.path.insert(1, original_dir)
-                self.parsers = {k.replace(parsers_dir, original_dir): v for k, v in self.parsers.items()}
+                for parser_obj in self.parsers.values():
+                    parser_obj.module_path = parser_obj.module_path.replace(parsers_dir, original_dir)
+                    parser_obj.root_directory = original_dir
                 shutil.rmtree(parsers_dir)
 
         self.yara = yara.compile(source='\n'.join(yara_rules))
