@@ -79,7 +79,8 @@ with open("{output_path}", 'w') as fp:
     def run_in_venv(self, sample_path: str, extractor: Extractor) -> ExtractorModel:
         # Load results and apply them against the model
         result = super().run_in_venv(sample_path, extractor)
-        if result.get('binaries'):
-            # Decode base64-encoded binaries
-            result['binaries'] = [b64decode(b) for b in result['binaries']]
+        for b in result.get('binaries', []):
+            if b.get('data'):
+                # Decode base64-encoded binaries
+                b['data'] = b64decode(b['data'])
         return ExtractorModel(**result)
