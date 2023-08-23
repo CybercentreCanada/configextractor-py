@@ -1,28 +1,43 @@
+import json
+import os
 import plyara
+import subprocess
 import yara
 
+from base64 import b64decode
 from logging import Logger
 from plyara.utils import rebuild_yara_rule
+from tempfile import NamedTemporaryFile
 from typing import Any, List, Dict
 
+
+class Extractor:
+    def __init__(self, framework, module, module_path, root_directory, yara_rule, venv = None) -> None:
+        self.framework = framework
+        self.module = module
+        self.module_path = module_path
+        self.root_directory = root_directory
+        self.rule = yara_rule
+        self.venv = venv
 
 class Framework:
     def __init__(self, logger: Logger, yara_attr_name=None):
         self.log = logger
         self.yara_attr_name = yara_attr_name
+        self.venv_script = ""
 
     @staticmethod
     # Get classification of module
-    def get_classification(module: Any) -> str:
+    def get_classification(extractor: Extractor) -> str:
         return None
 
     @staticmethod
     # Get name of module
-    def get_name(module):
-        return module.__name__.split(".")[-1]
+    def get_name(extractor: Extractor):
+        return extractor.module.__name__.split(".")[-1]
 
     # Extract YARA rules from module
-    def extract_yara_from_module(self, decoder: object, parser_path: str, existing_rule_names=[]) -> List[str]:
+    def extract_yara_from_module(self, decoder: object, module_name: str, existing_rule_names=[]) -> List[str]:
         if self.yara_attr_name and hasattr(decoder, self.yara_attr_name) and getattr(decoder, self.yara_attr_name):
             yara_rules = list()
             # Modify YARA rule to include meta about the parser
@@ -35,9 +50,7 @@ class Framework:
                 yara_rule_frag["metadata"].extend(
                     [
                         {'yara_identifier': yara_rule_name},
-                        {"parser_path": parser_path},
-                        {"parser_framework": self.__class__.__name__.upper()},
-                        {"parser_name": decoder.__name__},
+                        {"parser_module": module_name},
                     ]
                 )
 
@@ -51,7 +64,7 @@ class Framework:
                     yara.compile(source=rebuilt_rule)
                     yara_rules.append(rebuilt_rule)
                 except Exception as e:
-                    self.log.error(f"{parser_path}: {e}")
+                    self.log.error(f"{decoder.__name__}: {e}")
             return yara_rules
 
     # Validate module against framework
@@ -59,7 +72,35 @@ class Framework:
         NotImplementedError()
 
     # Run a series of modules
-    def run(
-        self, sample_path: str, parsers: Dict[Any, List[yara.Match]]
-    ) -> Dict[str, dict]:
+    def run(self, sample_path: str, parsers: Dict[Extractor, List[yara.Match]]) -> Dict[str, dict]:
         return NotImplementedError()
+
+    def run_in_venv(self, sample_path: str, extractor: Extractor) -> Dict[str, dict]:
+        # Write temporary script in the same directory as extractor to resolve relative imports
+        python_exe = os.path.join(extractor.venv, 'bin', 'python')
+        with NamedTemporaryFile('w', dir=os.path.dirname(extractor.module_path), suffix='.py') as script:
+            with NamedTemporaryFile('w') as yara_rule:
+                yara_rule.write(extractor.rule)
+                yara_rule.flush()
+                with NamedTemporaryFile() as output:
+                    module_name = extractor.module.__module__.split('.')[-1]
+                    module_class = extractor.module.__name__
+                    script.write(self.venv_script.format(module_name=module_name,
+                                                         module_class=module_class,
+                                                         sample_path=sample_path,
+                                                         output_path=output.name,
+                                                         yara_rule=yara_rule.name))
+                    script.flush()
+                    custom_module = script.name.split('.py')[0].replace(f'{extractor.root_directory}/', '').replace('/', '.')
+                    proc = subprocess.run([python_exe, '-m', custom_module], cwd=extractor.root_directory, capture_output=True)
+                    try:
+                        # Load results and return them
+                        output.seek(0)
+                        return json.load(output)
+                    except Exception:
+                        # If there was an error raised during runtime, then propagate
+                        delim = f"File \"{extractor.module_path}\""
+                        exception = proc.stderr.decode()
+                        if delim in exception:
+                            exception = f"{delim}{exception.split(delim, 1)[1]}"
+                        raise Exception(exception)

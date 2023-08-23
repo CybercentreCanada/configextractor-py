@@ -1,6 +1,7 @@
 # MWCP framework
 
 import inspect
+from logging import Logger
 import mwcp
 import regex
 
@@ -191,6 +192,17 @@ def convert_to_MACO(metadata: list) -> dict:
 
 
 class MWCP(Framework):
+    def __init__(self, logger: Logger, yara_attr_name=None):
+        super().__init__(logger, yara_attr_name)
+        self.venv_script = """
+import json
+import mwcp
+from .{module_name} import {module_class}
+
+result = mwcp.run({module_class}, data=open("{sample_path}", "rb").read())
+with open("{output_path}", 'w') as fp:
+    json.dump(result.as_json_dict(), fp)
+"""
     def validate(self, parser):
         if inspect.isclass(parser):
             return issubclass(parser, Parser) and (parser.AUTHOR or parser.DESCRIPTION)
@@ -202,27 +214,32 @@ class MWCP(Framework):
             parser_name = MWCP.get_name(parser)
             try:
                 results[parser_name] = {
-                    "author": parser.AUTHOR,
-                    "description": parser.DESCRIPTION,
+                    "author": parser.module.AUTHOR,
+                    "description": parser.module.DESCRIPTION,
                     "config": {},
                 }
-                # Just run MWCP parsers directly, using the filename to fetch the class attribute from module
-                result = mwcp.run(parser, data=open(sample_path, "rb").read())
-                if result:
-                    [self.log.error(e) for e in result.errors]
-                    if result.metadata:
-                        result = convert_to_MACO(result.as_json_dict()["metadata"])
-                        if result or yara_matches:
-                            family = parser_name
-                            for y in yara_matches:
-                                if y.meta.get("malware"):
-                                    family = y.meta["malware"]
-                                    break
 
-                            result["family"] = family
-                            results[parser_name].update({
-                                "config": ExtractorModel(**result).dict(exclude_defaults=True, exclude_none=True),
-                            })
+                result: dict = None
+                if parser.venv:
+                    result = self.run_in_venv(sample_path, parser)
+                else:
+                    # Just run MWCP parsers directly, using the filename to fetch the class attribute from module
+                    result = mwcp.run(parser.module, data=open(sample_path, "rb").read()).as_json_dict()
+
+                # Log any errors raised during execution
+                [self.log.error(e) for e in result['errors']]
+                result = convert_to_MACO(result["metadata"])
+                if result or yara_matches:
+                    family = parser_name
+                    for y in yara_matches:
+                        if y.meta.get("malware"):
+                            family = y.meta["malware"]
+                            break
+
+                    result["family"] = family
+                    results[parser_name].update({
+                        "config": ExtractorModel(**result).dict(exclude_defaults=True, exclude_none=True),
+                    })
 
                     if not results[parser_name]['config']:
                         results.pop(parser_name, None)

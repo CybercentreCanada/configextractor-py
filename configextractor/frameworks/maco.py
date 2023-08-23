@@ -1,26 +1,48 @@
 import inspect
+from logging import Logger
+from base64 import b64decode
 
+from configextractor.frameworks.base import Extractor, Framework
+from maco.extractor import Extractor as MACO_Extractor
+from maco.model import ExtractorModel
 
-from configextractor.frameworks.base import Framework
-from maco.extractor import Extractor
 from typing import Any, List, Dict
 
 
 class MACO(Framework):
+    def __init__(self, logger: Logger, yara_attr_name=None):
+        super().__init__(logger, yara_attr_name)
+        self.venv_script = """
+import json
+import yara
+from base64 import b64encode
+from .{module_name} import {module_class}
+
+class Base64Encoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, bytes):
+            return b64encode(o).decode()
+        return json.JSONEncoder.default(self, o)
+
+result = {module_class}().run(open("{sample_path}", 'rb'), matches=yara.compile("{yara_rule}").match("{sample_path}"))
+with open("{output_path}", 'w') as fp:
+    json.dump(result.dict(exclude_defaults=True, exclude_none=True), fp, cls=Base64Encoder)
+"""
+
     @staticmethod
-    def get_classification(module):
-        if hasattr(module, 'sharing'):
-            return module.sharing
+    def get_classification(extractor: Extractor):
+        if hasattr(extractor.module, 'sharing'):
+            return extractor.module.sharing
 
     def validate(self, module: Any) -> bool:
         if inspect.isclass(module):
-            return issubclass(module, Extractor)
+            return issubclass(module, MACO_Extractor)
 
-    def run(self, sample_path: str, parsers: Dict[str, List[str]]) -> Dict[str, dict]:
+    def run(self, sample_path: str, parsers: Dict[Extractor, List[str]]) -> Dict[str, dict]:
         results = dict()
-        for decoder_module, yara_matches in parsers.items():
+        for extractor, yara_matches in parsers.items():
             try:
-                decoder = decoder_module()
+                decoder: Extractor = extractor.module()
                 config = {}
                 if hasattr(decoder, 'family') and decoder.family:
                     config['family'] = decoder.family
@@ -32,7 +54,12 @@ class MACO(Framework):
                     "description": decoder.__doc__,
                     "config": config,
                 }
-                result = decoder.run(open(sample_path, "rb"), matches=yara_matches)
+                result: ExtractorModel = None
+                if extractor.venv:
+                    # Run in special mode using the virtual environment detected
+                    result = self.run_in_venv(sample_path, extractor)
+                else:
+                    result = decoder.run(open(sample_path, "rb"), matches=yara_matches)
                 if result:
                     results[decoder.name].update(
                         {"config": result.dict(exclude_defaults=True, exclude_none=True)}
@@ -48,3 +75,12 @@ class MACO(Framework):
                 results[decoder.name]['exception'] = str(e)
                 self.log.error(e)
         return results
+
+    def run_in_venv(self, sample_path: str, extractor: Extractor) -> ExtractorModel:
+        # Load results and apply them against the model
+        result = super().run_in_venv(sample_path, extractor)
+        for b in result.get('binaries', []):
+            if b.get('data'):
+                # Decode base64-encoded binaries
+                b['data'] = b64decode(b['data'])
+        return ExtractorModel(**result)

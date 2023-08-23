@@ -1,14 +1,14 @@
 # CAPE framework
-from configextractor.frameworks.base import Framework
+from configextractor.frameworks.base import Extractor, Framework
 from maco.model import ExtractorModel
 from collections import defaultdict
 from inspect import signature
 
 class CAPE(Framework):
     @staticmethod
-    def get_classification(module):
-        if hasattr(module, "TLP"):
-            return module.TLP
+    def get_classification(extractor: Extractor):
+        if hasattr(extractor.module, "TLP"):
+            return extractor.module.TLP
         return None
 
     def validate(self, module):
@@ -21,11 +21,14 @@ class CAPE(Framework):
             parser_name = CAPE.get_name(parser)
             try:
                 results[parser_name].update({
-                    "author": parser.AUTHOR if hasattr(parser, 'AUTHOR') else '<MISSING_AUTHOR>',
-                    "description": parser.DESCRIPTION if hasattr(parser, 'DESCRIPTION') else '<MISSING_DESCRIPTION>',
+                    "author": parser.module.AUTHOR if hasattr(parser.module, 'AUTHOR') else '<MISSING_AUTHOR>',
+                    "description": parser.module.DESCRIPTION if hasattr(parser.module, 'DESCRIPTION') else '<MISSING_DESCRIPTION>',
                     "config": {},
                 })
-                result = parser.extract_config(open(sample_path, "rb").read())
+                if parser.venv:
+                    raise NotImplementedError()
+                else:
+                    result = parser.module.extract_config(open(sample_path, "rb").read())
                 if result:
                     results[parser_name].update({
                         "config": ExtractorModel(**result).dict(exclude_defaults=True, exclude_none=True)
