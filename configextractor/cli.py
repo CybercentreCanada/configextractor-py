@@ -1,20 +1,44 @@
-import click
-import logging
 import json
+import logging
 import os
+
+import click
 
 from configextractor.main import ConfigExtractor
 
 
 @click.command()
-@click.option('-p', '--parsers_paths', help="Directory containing parsers",  type=click.Path(exists=True), multiple=True)
-@click.option('-s', '--sample_paths', help="Path to samples", type=click.Path(exists=True), multiple=True)
-@click.option('-b', '--block', help="Parser to ignore based on regex pattern",  type=click.STRING, default=[], multiple=True)
-@click.option('-v', '--verbosity', help="Logging verbosity",
-              type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
-              default="WARNING")
+@click.option(
+    "-p",
+    "--parsers_paths",
+    help="Directory containing parsers",
+    type=click.Path(exists=True),
+    multiple=True,
+)
+@click.option(
+    "-s",
+    "--sample_paths",
+    help="Path to samples",
+    type=click.Path(exists=True),
+    multiple=True,
+)
+@click.option(
+    "-b",
+    "--block",
+    help="Parser to ignore based on regex pattern",
+    type=click.STRING,
+    default=[],
+    multiple=True,
+)
+@click.option(
+    "-v",
+    "--verbosity",
+    help="Logging verbosity",
+    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
+    default="WARNING",
+)
 def main(parsers_paths, sample_paths, block, verbosity) -> None:
-    logger = logging.getLogger('cx')
+    logger = logging.getLogger("cx")
     logger.setLevel(verbosity)
     logger.addHandler(logging.StreamHandler())
     cx = ConfigExtractor(parsers_paths, parser_blocklist=block, logger=logger)

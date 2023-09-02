@@ -2,12 +2,13 @@
 
 import json
 import os
+from importlib.machinery import SourceFileLoader
+from subprocess import run as run_subprocess
+from typing import Dict, List
+
+from malduck import Extractor
 
 from configextractor.frameworks.base import Framework
-from importlib.machinery import SourceFileLoader
-from malduck import Extractor
-from subprocess import run as run_subprocess
-from typing import List, Dict
 
 
 class MALDUCK(Framework):
@@ -17,7 +18,11 @@ class MALDUCK(Framework):
             parser_name = os.path.basename(parser_dir_path)
 
             for parser_path in os.listdir(parser_dir_path):
-                if not parser_path.endswith('.py') or parser_name.startswith('test_') or parser_name == '__init__.py':
+                if (
+                    not parser_path.endswith(".py")
+                    or parser_name.startswith("test_")
+                    or parser_name == "__init__.py"
+                ):
                     # If file is marked as a test file or isn't a python file, ignore
                     continue
 
@@ -25,7 +30,7 @@ class MALDUCK(Framework):
                 parser_path = os.path.join(parser_dir_path, parser_path)
                 try:
                     parser = SourceFileLoader(parser_name, parser_path).load_module()
-                    if hasattr(parser, 'Extractor') and parser.Extractor == Extractor:
+                    if hasattr(parser, "Extractor") and parser.Extractor == Extractor:
                         return True
                 except Exception as e:
                     self.log.error(e)
@@ -38,9 +43,14 @@ class MALDUCK(Framework):
                     for subdir in subdirs:
                         # Only attempt validation if the directory contain Python files
                         parser = os.path.join(root, subdir)
-                        if any(file.endswith('.py') for file in os.listdir(parser)) and is_valid(parser):
+                        if any(
+                            file.endswith(".py") for file in os.listdir(parser)
+                        ) and is_valid(parser):
                             # De-duplicate directories that contain multiple parsers
-                            if not any(root.startswith(parser_dir) for parser_dir in new_parsers):
+                            if not any(
+                                root.startswith(parser_dir)
+                                for parser_dir in new_parsers
+                            ):
                                 new_parsers.append(root)
 
         return new_parsers
@@ -49,12 +59,19 @@ class MALDUCK(Framework):
         results = dict
         for modules_path in parsers:
             # MWCFG tool supports passing a directory containing all modules used for analysis
-            output = run_subprocess(['mwcfg', '--input', sample_path, '-m', modules_path],
-                                    capture_output=True, env=os.environ).stdout.decode().replace("'", '"')
+            output = (
+                run_subprocess(
+                    ["mwcfg", "--input", sample_path, "-m", modules_path],
+                    capture_output=True,
+                    env=os.environ,
+                )
+                .stdout.decode()
+                .replace("'", '"')
+            )
             mal_results = json.loads(output)
 
             for result in mal_results:
-                for config in result.get('configs', []):
+                for config in result.get("configs", []):
                     results.update(config)
 
         return results

@@ -1,9 +1,9 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-with open('requirements.txt', 'r') as fh:
+with open("requirements.txt", "r") as fh:
     requirements = fh.readlines()
 
 setup(
@@ -18,5 +18,5 @@ setup(
     [console_scripts]
     cx=configextractor.cli:main
     configextractor=configextractor.cli:main
-    """
+    """,
 )
