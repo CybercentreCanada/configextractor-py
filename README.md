@@ -10,8 +10,6 @@ a wrapper for popular malware configuration data decoders from:
 - MaCo: https://github.com/CybercentreCanada/Maco [MIT license]
 - MWCP framework: https://github.com/Defense-Cyber-Crime-Center/DC3-MWCP [MIT license]
 - CAPE Sandbox: https://github.com/kevoreilly/CAPEv2/ [GPL license] (many thanks to @kevoreilly for releasing so many open source parsers).
-- ~~RATDecoder: https://github.com/kevthehermit/RATDecoders [MIT license]~~
-    - Incomplete support
 - ~~MWCFG : https://github.com/c3rb3ru5d3d53c/mwcfg [BSD 3-Clause License]~~
     - Pending support from malduck with structured output
 
