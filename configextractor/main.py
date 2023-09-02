@@ -13,7 +13,6 @@ from typing import Dict, List, Set
 import cart
 import regex
 import yara
-
 from configextractor.frameworks import CAPE, MACO, MWCP
 from configextractor.frameworks.base import Extractor, Framework
 
@@ -141,11 +140,12 @@ class ConfigExtractor:
                             if fw_class.validate(member):
                                 if block_regex and block_regex.match(member.__name__):
                                     continue
+                                module_id = module_name
                                 if member.__name__ != module_name:
                                     # Account for the possibility of multiple extractor classes within the same module
-                                    module_name = f"{module_name}.{member.__name__}"
+                                    module_id = f"{module_name}.{member.__name__}"
                                 rules = fw_class.extract_yara_from_module(
-                                    member, module_name, yara_rule_names
+                                    member, module_id, yara_rule_names
                                 )
                                 ext = Extractor(
                                     fw_name,
@@ -160,7 +160,7 @@ class ConfigExtractor:
                                     self.standalone_parsers[fw_name].add(ext)
                                 else:
                                     yara_rules.extend(rules)
-                                self.parsers[module_name] = ext
+                                self.parsers[module_id] = ext
                                 break
                         except TypeError:
                             pass
