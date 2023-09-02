@@ -2,13 +2,13 @@
 
 import inspect
 from logging import Logger
+
 import mwcp
 import regex
+from maco.model import ConnUsageEnum, Encryption, ExtractorModel
+from mwcp import Parser
 
 from configextractor.frameworks.base import Framework
-from mwcp import Parser
-from maco.model import ExtractorModel, ConnUsageEnum, Encryption
-
 
 IP_REGEX_ONLY = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
 
@@ -136,11 +136,11 @@ def convert_to_MACO(metadata: list) -> dict:
                 }
 
                 # Strip ending ':' in URIs
-                if http['uri'] and http['uri'].endswith(':'):
-                    http['uri'] = http['uri'][:-1]
+                if http["uri"] and http["uri"].endswith(":"):
+                    http["uri"] = http["uri"][:-1]
 
                 if meta.get("query"):
-                    http.update({'query': meta['query']})
+                    http.update({"query": meta["query"]})
                 if meta.get("application_protocol"):
                     http.update({"protocol": meta["application_protocol"]})
                 if meta.get("credential"):
@@ -203,6 +203,7 @@ result = mwcp.run({module_class}, data=open("{sample_path}", "rb").read())
 with open("{output_path}", 'w') as fp:
     json.dump(result.as_json_dict(), fp)
 """
+
     def validate(self, parser):
         if inspect.isclass(parser):
             return issubclass(parser, Parser) and (parser.AUTHOR or parser.DESCRIPTION)
@@ -224,10 +225,12 @@ with open("{output_path}", 'w') as fp:
                     result = self.run_in_venv(sample_path, parser)
                 else:
                     # Just run MWCP parsers directly, using the filename to fetch the class attribute from module
-                    result = mwcp.run(parser.module, data=open(sample_path, "rb").read()).as_json_dict()
+                    result = mwcp.run(
+                        parser.module, data=open(sample_path, "rb").read()
+                    ).as_json_dict()
 
                 # Log any errors raised during execution
-                [self.log.error(e) for e in result['errors']]
+                [self.log.error(e) for e in result["errors"]]
                 result = convert_to_MACO(result["metadata"])
                 if result or yara_matches:
                     family = parser_name
@@ -237,11 +240,15 @@ with open("{output_path}", 'w') as fp:
                             break
 
                     result["family"] = family
-                    results[parser_name].update({
-                        "config": ExtractorModel(**result).dict(exclude_defaults=True, exclude_none=True),
-                    })
+                    results[parser_name].update(
+                        {
+                            "config": ExtractorModel(**result).dict(
+                                exclude_defaults=True, exclude_none=True
+                            ),
+                        }
+                    )
 
-                    if not results[parser_name]['config']:
+                    if not results[parser_name]["config"]:
                         results.pop(parser_name, None)
                 elif yara_matches:
                     # YARA rules matched, but no configuration extracted
@@ -250,6 +257,6 @@ with open("{output_path}", 'w') as fp:
                     # No result
                     results.pop(parser_name, None)
             except Exception as e:
-                results[parser_name]['exception'] = str(e)
+                results[parser_name]["exception"] = str(e)
                 self.log.error(f"{parser_name}: {e}")
         return results

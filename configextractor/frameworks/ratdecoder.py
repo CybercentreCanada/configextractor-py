@@ -2,29 +2,29 @@
 
 import inspect
 import os
+from importlib.machinery import SourceFileLoader
+from typing import Dict, List
 
-from configextractor.frameworks.base import Framework
 from malwareconfig.common import Decoder
 from malwareconfig.fileparser import FileParser
-from importlib.machinery import SourceFileLoader
-from typing import List, Dict
+
+from configextractor.frameworks.base import Framework
 
 
 class RATDECODER(Framework):
     def validate_parsers(self, parsers: List[str]) -> List[str]:
-
         # Helper function for MWCP validation
         def is_valid(parser_path: str):
             parser_name = os.path.basename(parser_path)
 
-            if not parser_path.endswith('.py') or parser_name.startswith('test_'):
+            if not parser_path.endswith(".py") or parser_name.startswith("test_"):
                 # If file is marked as a test file or isn't a python file, ignore
                 return False
 
             # All MWCP parsers contain a common class import
             try:
                 parser = SourceFileLoader(parser_name, parser_path).load_module()
-                if hasattr(parser, 'Decoder') and parser.Decoder == Decoder:
+                if hasattr(parser, "Decoder") and parser.Decoder == Decoder:
                     return True
             except Exception as e:
                 self.log.error(e)
@@ -50,7 +50,7 @@ class RATDECODER(Framework):
         # Compile list of decoders
         decoders = list()
         for parser_path in parsers:
-            parser_name = os.path.basename(parser_path).strip('.py')
+            parser_name = os.path.basename(parser_path).strip(".py")
             parser = SourceFileLoader(parser_name, parser_path).load_module()
             for _, mod_object in inspect.getmembers(parser):
                 if inspect.isclass(mod_object):
