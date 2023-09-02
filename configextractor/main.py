@@ -141,6 +141,9 @@ class ConfigExtractor:
                             if fw_class.validate(member):
                                 if block_regex and block_regex.match(member.__name__):
                                     continue
+                                if member.__name__ != module_name:
+                                    # Account for the possibility of multiple extractor classes within the same module
+                                    module_name = f"{module_name}.{member.__name__}"
                                 rules = fw_class.extract_yara_from_module(
                                     member, module_name, yara_rule_names
                                 )
