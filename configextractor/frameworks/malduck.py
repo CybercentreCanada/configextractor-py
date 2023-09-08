@@ -18,11 +18,7 @@ class MALDUCK(Framework):
             parser_name = os.path.basename(parser_dir_path)
 
             for parser_path in os.listdir(parser_dir_path):
-                if (
-                    not parser_path.endswith(".py")
-                    or parser_name.startswith("test_")
-                    or parser_name == "__init__.py"
-                ):
+                if not parser_path.endswith(".py") or parser_name.startswith("test_") or parser_name == "__init__.py":
                     # If file is marked as a test file or isn't a python file, ignore
                     continue
 
@@ -43,14 +39,9 @@ class MALDUCK(Framework):
                     for subdir in subdirs:
                         # Only attempt validation if the directory contain Python files
                         parser = os.path.join(root, subdir)
-                        if any(
-                            file.endswith(".py") for file in os.listdir(parser)
-                        ) and is_valid(parser):
+                        if any(file.endswith(".py") for file in os.listdir(parser)) and is_valid(parser):
                             # De-duplicate directories that contain multiple parsers
-                            if not any(
-                                root.startswith(parser_dir)
-                                for parser_dir in new_parsers
-                            ):
+                            if not any(root.startswith(parser_dir) for parser_dir in new_parsers):
                                 new_parsers.append(root)
 
         return new_parsers

@@ -38,9 +38,7 @@ with open("{output_path}", 'w') as fp:
         if inspect.isclass(module):
             return issubclass(module, MACO_Extractor)
 
-    def run(
-        self, sample_path: str, parsers: Dict[Extractor, List[str]]
-    ) -> Dict[str, dict]:
+    def run(self, sample_path: str, parsers: Dict[Extractor, List[str]]) -> Dict[str, dict]:
         results = dict()
         for extractor, yara_matches in parsers.items():
             try:
@@ -63,13 +61,7 @@ with open("{output_path}", 'w') as fp:
                 else:
                     result = decoder.run(open(sample_path, "rb"), matches=yara_matches)
                 if result:
-                    results[decoder.name].update(
-                        {
-                            "config": result.dict(
-                                exclude_defaults=True, exclude_none=True
-                            )
-                        }
-                    )
+                    results[decoder.name].update({"config": result.dict(exclude_defaults=True, exclude_none=True)})
                 elif yara_matches:
                     # YARA rules matched, but no configuration extracted
                     continue

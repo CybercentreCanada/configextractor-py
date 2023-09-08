@@ -13,6 +13,7 @@ from typing import Dict, List, Set
 import cart
 import regex
 import yara
+
 from configextractor.frameworks import CAPE, MACO, MWCP
 from configextractor.frameworks.base import Extractor, Framework
 
@@ -30,8 +31,7 @@ class ConfigExtractor:
             logger = getLogger()
         self.log = logger
         self.FRAMEWORK_LIBRARY_MAPPING: Dict[str, Framework] = {
-            fw_cls.__name__: fw_cls(logger, yara_attr)
-            for fw_cls, yara_attr in PARSER_FRAMEWORKS
+            fw_cls.__name__: fw_cls(logger, yara_attr) for fw_cls, yara_attr in PARSER_FRAMEWORKS
         }
 
         self.parsers: Dict[str, Extractor] = dict()
@@ -39,9 +39,7 @@ class ConfigExtractor:
         yara_rule_names: List[str] = list()
         self.standalone_parsers: Dict[str, Set[Extractor]] = defaultdict(set)
         for parsers_dir in parsers_dirs:
-            self.log.debug(
-                "Adding directories within parser directory in case of local dependencies"
-            )
+            self.log.debug("Adding directories within parser directory in case of local dependencies")
             self.log.debug(f"Adding {os.path.join(parsers_dir, os.pardir)} to PATH")
             not_py = [
                 file
@@ -76,12 +74,8 @@ class ConfigExtractor:
                 mod = importlib.import_module(foldername)
 
             # walk packages in the extractors directory to find all extactors
-            block_regex = (
-                regex.compile("|".join(parser_blocklist)) if parser_blocklist else None
-            )
-            for module_path, module_name, ispkg in pkgutil.walk_packages(
-                mod.__path__, mod.__name__ + "."
-            ):
+            block_regex = regex.compile("|".join(parser_blocklist)) if parser_blocklist else None
+            for module_path, module_name, ispkg in pkgutil.walk_packages(mod.__path__, mod.__name__ + "."):
 
                 def find_venv(path: str) -> str:
                     parent_dir = os.path.dirname(path)
@@ -129,11 +123,7 @@ class ConfigExtractor:
                     if parser_site_packages in sys.path:
                         sys.path.remove(parser_site_packages)
                 # Determine if module contains parsers of a supported framework
-                candidates = [module] + [
-                    member
-                    for _, member in inspect.getmembers(module)
-                    if inspect.isclass(member)
-                ]
+                candidates = [module] + [member for _, member in inspect.getmembers(module) if inspect.isclass(member)]
                 for member in candidates:
                     for fw_name, fw_class in self.FRAMEWORK_LIBRARY_MAPPING.items():
                         try:
@@ -144,9 +134,7 @@ class ConfigExtractor:
                                 if member.__name__ != module_name:
                                     # Account for the possibility of multiple extractor classes within the same module
                                     module_id = f"{module_name}.{member.__name__}"
-                                rules = fw_class.extract_yara_from_module(
-                                    member, module_id, yara_rule_names
-                                )
+                                rules = fw_class.extract_yara_from_module(member, module_id, yara_rule_names)
                                 ext = Extractor(
                                     fw_name,
                                     member,
@@ -169,9 +157,7 @@ class ConfigExtractor:
 
                 # Correct metadata in YARA rules
                 if original_dir != parsers_dir:
-                    yara_rules = [
-                        rule.replace(parsers_dir, original_dir) for rule in yara_rules
-                    ]
+                    yara_rules = [rule.replace(parsers_dir, original_dir) for rule in yara_rules]
 
             if original_dir != parsers_dir:
                 # Correct the paths to the parsers to match metadata changes
@@ -181,23 +167,16 @@ class ConfigExtractor:
                 sys.path.insert(1, path_parent)
                 sys.path.insert(1, original_dir)
                 for parser_obj in self.parsers.values():
-                    parser_obj.module_path = parser_obj.module_path.replace(
-                        parsers_dir, original_dir
-                    )
+                    parser_obj.module_path = parser_obj.module_path.replace(parsers_dir, original_dir)
                     parser_obj.root_directory = original_dir
                 shutil.rmtree(parsers_dir)
 
         self.yara = yara.compile(source="\n".join(yara_rules))
         self.log.debug(f"# of YARA-dependent parsers: {len(self.parsers)}")
         self.log.debug(f"# of YARA rules extracted from parsers: {len(yara_rules)}")
-        [
-            self.log.debug(f"# of standalone {k} parsers: {len(v)}")
-            for k, v in self.standalone_parsers.items()
-        ]
+        [self.log.debug(f"# of standalone {k} parsers: {len(v)}") for k, v in self.standalone_parsers.items()]
         if parser_blocklist:
-            self.log.info(
-                f"Ignoring output from the following parsers matching: {parser_blocklist}"
-            )
+            self.log.info(f"Ignoring output from the following parsers matching: {parser_blocklist}")
 
     def get_details(self, extractor: Extractor) -> Dict[str, str]:
         fw_cls = self.FRAMEWORK_LIBRARY_MAPPING[extractor.framework]
@@ -224,9 +203,7 @@ class ConfigExtractor:
         results = dict()
         parsers_to_run = defaultdict(lambda: defaultdict(list))
         parser_names = list()
-        block_regex = (
-            regex.compile("|".join(parser_blocklist)) if parser_blocklist else None
-        )
+        block_regex = regex.compile("|".join(parser_blocklist)) if parser_blocklist else None
 
         with tempfile.NamedTemporaryFile() as sample_copy:
             # Make a copy of the sample that will be cleaned up after analysis is complete
@@ -245,9 +222,7 @@ class ConfigExtractor:
                 # Retrieve relevant parser information
                 extractor = self.parsers[yara_match.meta.get("parser_module")]
                 if block_regex and block_regex.match(extractor.module.__name__):
-                    self.log.info(
-                        f"Blocking {extractor.module.__name__} based on passed blocklist regex list"
-                    )
+                    self.log.info(f"Blocking {extractor.module.__name__} based on passed blocklist regex list")
                     continue
                 # Pass in yara.Match objects since some framework can leverage it
                 parsers_to_run[extractor.framework][extractor].append(yara_match)
@@ -256,20 +231,14 @@ class ConfigExtractor:
             for parser_framework, parser_list in self.standalone_parsers.items():
                 for parser in parser_list:
                     if block_regex and block_regex.match(parser.module.__name__):
-                        self.log.info(
-                            f"Blocking {parser.module.__name__} based on passed blocklist regex list"
-                        )
+                        self.log.info(f"Blocking {parser.module.__name__} based on passed blocklist regex list")
                         continue
                     parsers_to_run[parser_framework][parser].extend([])
 
             for framework, parser_list in parsers_to_run.items():
                 if parser_list:
-                    self.log.debug(
-                        f"Running the following under the {framework} framework with YARA: {parser_names}"
-                    )
-                    result = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(
-                        sample_copy.name, parser_list
-                    )
+                    self.log.debug(f"Running the following under the {framework} framework with YARA: {parser_names}")
+                    result = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(sample_copy.name, parser_list)
                     self.finalize(result)
                     if result:
                         results[framework] = result
