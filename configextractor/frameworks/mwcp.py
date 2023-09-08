@@ -24,9 +24,7 @@ def convert_to_MACO(metadata: list) -> dict:
             host, port = meta["address"].split(":", 1)
         else:
             port = meta["port"]
-        server_key = (
-            "server_ip" if regex.match(IP_REGEX_ONLY, host) else "server_domain"
-        )
+        server_key = "server_ip" if regex.match(IP_REGEX_ONLY, host) else "server_domain"
         if net_protocol in ["tcp", "udp"]:
             conn = {server_key: host, "usage": "c2" if meta.get("c2") else conn_usage}
             if port:
@@ -69,9 +67,7 @@ def convert_to_MACO(metadata: list) -> dict:
             config.setdefault("password", []).append(meta["password"])
         elif meta["type"] == "crypto_address":
             # Cryptocurrent Addresses
-            config.setdefault("cryptocurrency", []).append(
-                {"address": meta["address"], "coin": meta.get("symbol")}
-            )
+            config.setdefault("cryptocurrency", []).append({"address": meta["address"], "coin": meta.get("symbol")})
         elif meta["type"] == "decoded_string":
             # Decoded strings
             config.setdefault("decoded_strings", []).append(meta["value"])
@@ -130,9 +126,7 @@ def convert_to_MACO(metadata: list) -> dict:
                 http = {
                     "uri": meta.get("url"),
                     "path": meta.get("path"),
-                    "usage": "c2"
-                    if meta.get("socket", {}).get("c2", False)
-                    else conn_usage,
+                    "usage": "c2" if meta.get("socket", {}).get("c2", False) else conn_usage,
                 }
 
                 # Strip ending ':' in URIs
@@ -153,10 +147,7 @@ def convert_to_MACO(metadata: list) -> dict:
                 config.setdefault("http", []).append(http)
             socket = meta.get("socket")
             if socket:
-                if (
-                    meta["application_protocol"]
-                    and meta["application_protocol"].lower() == "smtp"
-                ):
+                if meta["application_protocol"] and meta["application_protocol"].lower() == "smtp":
                     # SMTP Connection
                     smtp = {"hostname": socket.get("address"), "usage": conn_usage}
                     if meta.get("credential"):
@@ -225,9 +216,7 @@ with open("{output_path}", 'w') as fp:
                     result = self.run_in_venv(sample_path, parser)
                 else:
                     # Just run MWCP parsers directly, using the filename to fetch the class attribute from module
-                    result = mwcp.run(
-                        parser.module, data=open(sample_path, "rb").read()
-                    ).as_json_dict()
+                    result = mwcp.run(parser.module, data=open(sample_path, "rb").read()).as_json_dict()
 
                 # Log any errors raised during execution
                 [self.log.error(e) for e in result["errors"]]
@@ -242,9 +231,7 @@ with open("{output_path}", 'w') as fp:
                     result["family"] = family
                     results[parser_name].update(
                         {
-                            "config": ExtractorModel(**result).dict(
-                                exclude_defaults=True, exclude_none=True
-                            ),
+                            "config": ExtractorModel(**result).dict(exclude_defaults=True, exclude_none=True),
                         }
                     )
 

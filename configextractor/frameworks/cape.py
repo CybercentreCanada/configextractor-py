@@ -15,10 +15,7 @@ class CAPE(Framework):
         return None
 
     def validate(self, module):
-        return (
-            hasattr(module, "extract_config")
-            and len(signature(module.extract_config).parameters) == 1
-        )
+        return hasattr(module, "extract_config") and len(signature(module.extract_config).parameters) == 1
 
     def run(self, sample_path, parsers):
         results = defaultdict(dict)
@@ -28,9 +25,7 @@ class CAPE(Framework):
             try:
                 results[parser_name].update(
                     {
-                        "author": parser.module.AUTHOR
-                        if hasattr(parser.module, "AUTHOR")
-                        else "<MISSING_AUTHOR>",
+                        "author": parser.module.AUTHOR if hasattr(parser.module, "AUTHOR") else "<MISSING_AUTHOR>",
                         "description": parser.module.DESCRIPTION
                         if hasattr(parser.module, "DESCRIPTION")
                         else "<MISSING_DESCRIPTION>",
@@ -40,16 +35,10 @@ class CAPE(Framework):
                 if parser.venv:
                     raise NotImplementedError()
                 else:
-                    result = parser.module.extract_config(
-                        open(sample_path, "rb").read()
-                    )
+                    result = parser.module.extract_config(open(sample_path, "rb").read())
                 if result:
                     results[parser_name].update(
-                        {
-                            "config": ExtractorModel(**result).dict(
-                                exclude_defaults=True, exclude_none=True
-                            )
-                        }
+                        {"config": ExtractorModel(**result).dict(exclude_defaults=True, exclude_none=True)}
                     )
                 elif yara_matches:
                     # YARA rules matched, but no configuration extracted
