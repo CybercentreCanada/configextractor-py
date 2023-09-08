@@ -13,7 +13,6 @@ from typing import Dict, List, Set
 import cart
 import regex
 import yara
-
 from configextractor.frameworks import CAPE, MACO, MWCP
 from configextractor.frameworks.base import Extractor, Framework
 
@@ -37,7 +36,6 @@ class ConfigExtractor:
         self.parsers: Dict[str, Extractor] = dict()
         yara_rules: List[str] = list()
         yara_rule_names: List[str] = list()
-        self.standalone_parsers: Dict[str, Set[Extractor]] = defaultdict(set)
         for parsers_dir in parsers_dirs:
             self.log.debug("Adding directories within parser directory in case of local dependencies")
             self.log.debug(f"Adding {os.path.join(parsers_dir, os.pardir)} to PATH")
@@ -134,7 +132,7 @@ class ConfigExtractor:
                                 if member.__name__ != module_name:
                                     # Account for the possibility of multiple extractor classes within the same module
                                     module_id = f"{module_name}.{member.__name__}"
-                                rules = fw_class.extract_yara_from_module(member, module_id, yara_rule_names)
+                                rules = fw_class.extract_yara_from_module(member, module_id, yara_rule_names) or []
                                 ext = Extractor(
                                     fw_name,
                                     member,
@@ -143,10 +141,7 @@ class ConfigExtractor:
                                     "\n".join(rules),
                                     parser_venv,
                                 )
-                                if not rules:
-                                    # Standalone parser, need to know what framework to run under
-                                    self.standalone_parsers[fw_name].add(ext)
-                                else:
+                                if rules:
                                     yara_rules.extend(rules)
                                 self.parsers[module_id] = ext
                                 break
@@ -172,9 +167,16 @@ class ConfigExtractor:
                 shutil.rmtree(parsers_dir)
 
         self.yara = yara.compile(source="\n".join(yara_rules))
-        self.log.debug(f"# of YARA-dependent parsers: {len(self.parsers)}")
-        self.log.debug(f"# of YARA rules extracted from parsers: {len(yara_rules)}")
-        [self.log.debug(f"# of standalone {k} parsers: {len(v)}") for k, v in self.standalone_parsers.items()]
+        for fw_name in list(self.FRAMEWORK_LIBRARY_MAPPING.keys()):
+            self.log.debug(
+                f"# of YARA-dependent parsers under {fw_name}: "
+                f"{len([p for p in self.parsers.values() if p.rule and p.framework == fw_name])}"
+            )
+            self.log.debug(
+                f"# of YARA-independent parsers under {fw_name}: "
+                f"{len([p for p in self.parsers.values() if not p.rule and p.framework == fw_name])}"
+            )
+        self.log.debug(f"# of YARA rules extracted from all parsers: {len(yara_rules)}")
         if parser_blocklist:
             self.log.info(f"Ignoring output from the following parsers matching: {parser_blocklist}")
 
@@ -228,12 +230,11 @@ class ConfigExtractor:
                 parsers_to_run[extractor.framework][extractor].append(yara_match)
 
             # Add standalone parsers that should run on any file
-            for parser_framework, parser_list in self.standalone_parsers.items():
-                for parser in parser_list:
-                    if block_regex and block_regex.match(parser.module.__name__):
-                        self.log.info(f"Blocking {parser.module.__name__} based on passed blocklist regex list")
-                        continue
-                    parsers_to_run[parser_framework][parser].extend([])
+            for parser in [p for p in self.parsers.values() if not p.rule]:
+                if block_regex and block_regex.match(parser.module.__name__):
+                    self.log.info(f"Blocking {parser.module.__name__} based on passed blocklist regex list")
+                    continue
+                parsers_to_run[parser.framework][parser].extend([])
 
             for framework, parser_list in parsers_to_run.items():
                 if parser_list:
