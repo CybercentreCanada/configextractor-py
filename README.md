@@ -2,16 +2,17 @@
 
 Maintainer: @cccs-rs
 
-Python Library for ConfigExtractor
+Python Library for performing configuration extraction across multiple extraction frameworks (ie. Maco, MWCP, etc.). This tool is actively used in the [Assemblyline](https://cybercentrecanada.github.io/assemblyline4_docs/) project as a [service](https://github.com/CybercentreCanada/assemblyline-service-configextractor).
 
 The code found in this repository contains a command line interface that acts as
 a wrapper for popular malware configuration data decoders from:
 
-- MaCo: https://github.com/CybercentreCanada/Maco [MIT license]
+- Maco: https://github.com/CybercentreCanada/Maco [MIT license]
 - MWCP framework: https://github.com/Defense-Cyber-Crime-Center/DC3-MWCP [MIT license]
-- CAPE Sandbox: https://github.com/kevoreilly/CAPEv2/ [GPL license] (many thanks to @kevoreilly for releasing so many open source parsers).
+- CAPE Sandbox*: https://github.com/kevoreilly/CAPEv2/ [GPL license] (many thanks to @kevoreilly for releasing so many open source parsers).
+    - Support using an old [fork](https://github.com/cccs-rs/CAPEv2) but actively working on official native support with upstream!
 - ~~MWCFG : https://github.com/c3rb3ru5d3d53c/mwcfg [BSD 3-Clause License]~~
-    - Pending support from malduck with structured output
+    - [Pending support from malduck with structured output](https://github.com/CERT-Polska/malduck/pull/101)
 
 ## Installation Guide
 
@@ -33,10 +34,11 @@ pip install  --global-option="build" --global-option="--enable-dotnet" --global-
 ### Running in a Container
 
 ```bash
-docker container run -it \
+docker container run \
   -v /path/to/parsers:/mnt/parsers \
   -v /path/to/samples:/mnt/samples \
-  cccs/assemblyline-service-configextractor bash
+  cccs/assemblyline-service-configextractor \
+  "cx -p /mnt/parsers -s /mnt/samples"
 ```
 
 ## Usage
@@ -69,8 +71,9 @@ logger.setLevel('DEBUG')
 cx = ConfigExtractor(["/path/to/extractors/"], logger=logger)
 
 # List all parsers actively detected and loaded into instance
-# cx.parsers.keys() lists all the filesystem paths to the parsers
-print([cx.get_details(p)['name'] for p in cx.parsers.keys()])
+# cx.parsers.keys() lists all the relative module paths to the parsers
+# The value of each key is an Extractor object containing details for running the extractor (ie. venv location, YARA rule, etc.)
+print([cx.get_details(p)['name'] for p in cx.parsers.values()])
 
 # Run all loaded parsers against sample
 results = cx.run_parsers('/path/to/sample')
