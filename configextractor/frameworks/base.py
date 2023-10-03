@@ -48,6 +48,7 @@ class Framework:
                 rebuild_yara_rule(yara_rule_frag)
                 for yara_rule_frag in yara_parser.parse_string(getattr(decoder, self.yara_attr_name))
             ]
+        return []
 
     # Validate module against framework
     def validate(self, module: Any) -> bool:
