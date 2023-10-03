@@ -11,7 +11,8 @@ from plyara.utils import rebuild_yara_rule
 
 
 class Extractor:
-    def __init__(self, framework, module, module_path, root_directory, yara_rule, venv=None) -> None:
+    def __init__(self, id, framework, module, module_path, root_directory, yara_rule, venv=None) -> None:
+        self.id = id
         self.framework = framework
         self.module = module
         self.module_path = module_path
@@ -38,7 +39,7 @@ class Framework:
 
     # Define a template for results from this Extractor
     def result_template(self, extractor: Extractor, yara_matches: List[yara.Match]) -> Dict[str, str]:
-        return dict(path=extractor.module_path, yara_hits=[y.rule for y in yara_matches])
+        return dict(id=extractor.id, yara_hits=[y.rule for y in yara_matches])
 
     # Extract YARA rules from module
     def extract_yara_from_module(self, decoder: object) -> List[str]:

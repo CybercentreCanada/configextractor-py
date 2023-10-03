@@ -38,7 +38,6 @@ class CAPE(Framework):
         results = list()
         for parser, yara_matches in parsers.items():
             # Just run CAPE parsers as-is
-            parser_path = parser.module_path
             try:
                 result = self.result_template(parser, yara_matches)
                 if parser.venv:
@@ -55,7 +54,7 @@ class CAPE(Framework):
             except Exception as e:
                 # If an exception was raised at runtime, append to results
                 result["exception"] = str(e)
-                self.log.error(f"{parser_path}: {e}")
+                self.log.error(f"{parser.id}: {e}")
 
             results.append(result)
 

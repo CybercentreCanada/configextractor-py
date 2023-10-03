@@ -216,7 +216,6 @@ with open("{output_path}", 'w') as fp:
 
         for parser, yara_matches in parsers.items():
             parser_name = MWCP.get_name(parser)
-            parser_path = parser.module_path
             try:
                 result = self.result_template(parser, yara_matches)
 
@@ -249,6 +248,6 @@ with open("{output_path}", 'w') as fp:
 
             except Exception as e:
                 result["exception"] = str(e)
-                self.log.error(f"{parser_path}: {e}")
+                self.log.error(f"{parser.id}: {e}")
             results.append(result)
         return results

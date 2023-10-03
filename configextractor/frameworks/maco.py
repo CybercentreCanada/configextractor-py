@@ -75,7 +75,7 @@ with open("{output_path}", 'w') as fp:
             except Exception as e:
                 # Add exception to results
                 result["exception"] = str(e)
-                self.log.error(e)
+                self.log.error(f"{extractor.id}: {e}")
             results.append(result)
         return results
 

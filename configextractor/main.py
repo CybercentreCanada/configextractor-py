@@ -135,6 +135,7 @@ class ConfigExtractor:
                                     module_id = f"{module_name}.{member.__name__}"
                                 rules = fw_class.extract_yara_from_module(member)
                                 ext = Extractor(
+                                    module_id,
                                     fw_name,
                                     member,
                                     module.__file__,
