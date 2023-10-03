@@ -41,37 +41,13 @@ class Framework:
         return dict(path=extractor.module_path, yara_hits=[y.rule for y in yara_matches])
 
     # Extract YARA rules from module
-    def extract_yara_from_module(self, decoder: object, module_name: str, existing_rule_names=[]) -> List[str]:
+    def extract_yara_from_module(self, decoder: object) -> List[str]:
         if self.yara_attr_name and hasattr(decoder, self.yara_attr_name) and getattr(decoder, self.yara_attr_name):
-            yara_rules = list()
-            # Modify YARA rule to include meta about the parser
             yara_parser = plyara.Plyara()
-            for yara_rule_frag in yara_parser.parse_string(getattr(decoder, self.yara_attr_name)):
-                # If this rule came with no metadata then instantiate it
-                if not yara_rule_frag.get("metadata"):
-                    yara_rule_frag["metadata"] = list()
-                yara_rule_name = yara_rule_frag["rule_name"]
-                yara_rule_frag["metadata"].extend(
-                    [
-                        {"yara_identifier": yara_rule_name},
-                        {"parser_module": module_name},
-                    ]
-                )
-
-                # Modify the name of the rule to avoid duplicate identifiers during compilation
-                if yara_rule_name in existing_rule_names:
-                    yara_rule_frag[
-                        "rule_name"
-                    ] = f"{yara_rule_name}_{len([i for i in existing_rule_names if i.startswith(yara_rule_name)])}"
-
-                existing_rule_names.append(yara_rule_name)
-                rebuilt_rule = rebuild_yara_rule(yara_rule_frag)
-                try:
-                    yara.compile(source=rebuilt_rule)
-                    yara_rules.append(rebuilt_rule)
-                except Exception as e:
-                    self.log.error(f"{decoder.__name__}: {e}")
-            return yara_rules
+            return [
+                rebuild_yara_rule(yara_rule_frag)
+                for yara_rule_frag in yara_parser.parse_string(getattr(decoder, self.yara_attr_name))
+            ]
 
     # Validate module against framework
     def validate(self, module: Any) -> bool:

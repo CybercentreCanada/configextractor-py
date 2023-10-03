@@ -35,8 +35,7 @@ class ConfigExtractor:
         }
 
         self.parsers: Dict[str, Extractor] = dict()
-        yara_rules: List[str] = list()
-        yara_rule_names: List[str] = list()
+        namespaced_yara_rules: Dict[str, List[str]] = dict()
         for parsers_dir in parsers_dirs:
             parsers_dir = os.path.abspath(parsers_dir)
             self.log.debug("Adding directories within parser directory in case of local dependencies")
@@ -134,7 +133,7 @@ class ConfigExtractor:
                                 if member.__name__ != module_name:
                                     # Account for the possibility of multiple extractor classes within the same module
                                     module_id = f"{module_name}.{member.__name__}"
-                                rules = fw_class.extract_yara_from_module(member, module_id, yara_rule_names) or []
+                                rules = fw_class.extract_yara_from_module(member)
                                 ext = Extractor(
                                     fw_name,
                                     member,
@@ -144,17 +143,13 @@ class ConfigExtractor:
                                     parser_venv,
                                 )
                                 if rules:
-                                    yara_rules.extend(rules)
+                                    namespaced_yara_rules[module_id] = rules
                                 self.parsers[module_id] = ext
                                 break
                         except TypeError:
                             pass
                         except Exception as e:
                             self.log.error(f"{member}: {e}")
-
-                # Correct metadata in YARA rules
-                if original_dir != parsers_dir:
-                    yara_rules = [rule.replace(parsers_dir, original_dir) for rule in yara_rules]
 
             if original_dir != parsers_dir:
                 # Correct the paths to the parsers to match metadata changes
@@ -168,7 +163,7 @@ class ConfigExtractor:
                     parser_obj.root_directory = original_dir
                 shutil.rmtree(parsers_dir)
 
-        self.yara = yara.compile(source="\n".join(yara_rules))
+        self.yara = yara.compile(sources={ns: "\n".join(rules) for ns, rules in namespaced_yara_rules.items()})
         for fw_name in list(self.FRAMEWORK_LIBRARY_MAPPING.keys()):
             self.log.debug(
                 f"# of YARA-dependent parsers under {fw_name}: "
@@ -178,7 +173,6 @@ class ConfigExtractor:
                 f"# of YARA-independent parsers under {fw_name}: "
                 f"{len([p for p in self.parsers.values() if not p.rule and p.framework == fw_name])}"
             )
-        self.log.debug(f"# of YARA rules extracted from all parsers: {len(yara_rules)}")
         if parser_blocklist:
             self.log.info(f"Ignoring output from the following parsers matching: {parser_blocklist}")
 
@@ -224,7 +218,7 @@ class ConfigExtractor:
             # Get YARA-dependent parsers that should run based on match
             for yara_match in self.yara.match(sample_copy.name):
                 # Retrieve relevant parser information
-                extractor = self.parsers[yara_match.meta.get("parser_module")]
+                extractor = self.parsers[yara_match.namespace]
                 if block_regex and block_regex.match(extractor.module.__name__):
                     self.log.info(f"Blocking {extractor.module.__name__} based on passed blocklist regex list")
                     continue
