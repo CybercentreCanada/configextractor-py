@@ -36,6 +36,10 @@ class Framework:
     def get_name(extractor: Extractor):
         return extractor.module.__name__.split(".")[-1]
 
+    # Define a template for results from this Extractor
+    def result_template(self, extractor: Extractor, yara_matches: List[yara.Match]) -> Dict[str, str]:
+        return dict(path=extractor.module_path, yara_hits=[y.rule for y in yara_matches])
+
     # Extract YARA rules from module
     def extract_yara_from_module(self, decoder: object, module_name: str, existing_rule_names=[]) -> List[str]:
         if self.yara_attr_name and hasattr(decoder, self.yara_attr_name) and getattr(decoder, self.yara_attr_name):
@@ -74,7 +78,7 @@ class Framework:
         NotImplementedError()
 
     # Run a series of modules
-    def run(self, sample_path: str, parsers: Dict[Extractor, List[yara.Match]]) -> Dict[str, dict]:
+    def run(self, sample_path: str, parsers: Dict[Extractor, List[yara.Match]]) -> List[dict]:
         return NotImplementedError()
 
     def run_in_venv(self, sample_path: str, extractor: Extractor) -> Dict[str, dict]:

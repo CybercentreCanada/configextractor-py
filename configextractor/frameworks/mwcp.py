@@ -2,13 +2,14 @@
 
 import inspect
 from logging import Logger
+from typing import Dict, List
 
 import mwcp
 import regex
 from maco.model import ConnUsageEnum, Encryption, ExtractorModel
 from mwcp import Parser
 
-from configextractor.frameworks.base import Framework
+from configextractor.frameworks.base import Extractor, Framework
 
 IP_REGEX_ONLY = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
 
@@ -197,53 +198,57 @@ with open("{output_path}", 'w') as fp:
 
     def validate(self, parser):
         if inspect.isclass(parser):
-            return issubclass(parser, Parser) and (parser.AUTHOR or parser.DESCRIPTION)
+            # 'DESCRIPTION' has to be implemented otherwise will raise an exception according to MWCP
+            return issubclass(parser, Parser) and parser.DESCRIPTION
+
+    def result_template(self, extractor: Extractor, yara_matches: List) -> Dict[str, str]:
+        template = super().result_template(extractor, yara_matches)
+        template.update(
+            {
+                "author": extractor.module.AUTHOR,
+                "description": extractor.module.DESCRIPTION,
+            }
+        )
+        return template
 
     def run(self, sample_path, parsers):
-        results = dict()
+        results = list()
 
         for parser, yara_matches in parsers.items():
             parser_name = MWCP.get_name(parser)
+            parser_path = parser.module_path
             try:
-                results[parser_name] = {
-                    "author": parser.module.AUTHOR,
-                    "description": parser.module.DESCRIPTION,
-                    "config": {},
-                }
+                result = self.result_template(parser, yara_matches)
 
-                result: dict = None
+                r: dict = None
                 if parser.venv:
-                    result = self.run_in_venv(sample_path, parser)
+                    r = self.run_in_venv(sample_path, parser)
                 else:
                     # Just run MWCP parsers directly, using the filename to fetch the class attribute from module
-                    result = mwcp.run(parser.module, data=open(sample_path, "rb").read()).as_json_dict()
+                    r = mwcp.run(parser.module, data=open(sample_path, "rb").read()).as_json_dict()
 
                 # Log any errors raised during execution
-                [self.log.error(e) for e in result["errors"]]
-                result = convert_to_MACO(result["metadata"])
-                if result or yara_matches:
-                    family = parser_name
-                    for y in yara_matches:
-                        if y.meta.get("malware"):
-                            family = y.meta["malware"]
-                            break
-
-                    result["family"] = family
-                    results[parser_name].update(
-                        {
-                            "config": ExtractorModel(**result).dict(exclude_defaults=True, exclude_none=True),
-                        }
-                    )
-
-                    if not results[parser_name]["config"]:
-                        results.pop(parser_name, None)
-                elif yara_matches:
-                    # YARA rules matched, but no configuration extracted
+                [self.log.error(e) for e in r["errors"]]
+                r = convert_to_MACO(r["metadata"])
+                if not (r or yara_matches):
+                    # Nothing of interest to report
                     continue
-                else:
-                    # No result
-                    results.pop(parser_name, None)
+
+                family = parser_name
+                for y in yara_matches:
+                    if y.meta.get("malware"):
+                        family = y.meta["malware"]
+                        break
+
+                r["family"] = family
+                result.update(
+                    {
+                        "config": ExtractorModel(**r).dict(exclude_defaults=True, exclude_none=True),
+                    }
+                )
+
             except Exception as e:
-                results[parser_name]["exception"] = str(e)
-                self.log.error(f"{parser_name}: {e}")
+                result["exception"] = str(e)
+                self.log.error(f"{parser_path}: {e}")
+            results.append(result)
         return results

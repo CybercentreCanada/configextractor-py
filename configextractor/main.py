@@ -194,7 +194,7 @@ class ConfigExtractor:
 
     def finalize(self, results: List[dict]):
         # Ensure schemes/protocol are present in HTTP configurations
-        for config in results.values():
+        for config in results:
             config = config.get("config", {})
             for network_conn in config.get("http", []):
                 network_conn.setdefault("protocol", "http")

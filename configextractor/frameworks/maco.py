@@ -36,42 +36,47 @@ with open("{output_path}", 'w') as fp:
 
     def validate(self, module: Any) -> bool:
         if inspect.isclass(module):
-            return issubclass(module, MACO_Extractor)
+            # 'author' has to be implemented otherwise will raise an exception according to MWCP
+            return issubclass(module, MACO_Extractor) and module.author
 
-    def run(self, sample_path: str, parsers: Dict[Extractor, List[str]]) -> Dict[str, dict]:
-        results = dict()
+    def result_template(self, extractor: Extractor, yara_matches: List) -> Dict[str, str]:
+        template = super().result_template(extractor, yara_matches)
+        decoder = extractor.module()
+        template.update(
+            {
+                "author": decoder.author,
+                "description": decoder.__doc__,
+                "config": {"family": decoder.family if hasattr(decoder, "family") else decoder.__class__.__name__},
+            }
+        )
+        return template
+
+    def run(self, sample_path: str, parsers: Dict[Extractor, List[str]]) -> List[dict]:
+        results = list()
         for extractor, yara_matches in parsers.items():
             try:
-                decoder: Extractor = extractor.module()
-                config = {}
-                if hasattr(decoder, "family") and decoder.family:
-                    config["family"] = decoder.family
-                else:
-                    config["family"] = decoder.__class__.__name__
+                decoder = extractor.module()
+                result = self.result_template(extractor, yara_matches)
+
                 # Run MaCo parser with YARA matches
-                results[decoder.name] = {
-                    "author": decoder.author,
-                    "description": decoder.__doc__,
-                    "config": config,
-                }
-                result: ExtractorModel = None
+                r: ExtractorModel = None
                 if extractor.venv:
                     # Run in special mode using the virtual environment detected
-                    result = self.run_in_venv(sample_path, extractor)
+                    r = self.run_in_venv(sample_path, extractor)
                 else:
-                    result = decoder.run(open(sample_path, "rb"), matches=yara_matches)
-                if result:
-                    results[decoder.name].update({"config": result.dict(exclude_defaults=True, exclude_none=True)})
-                elif yara_matches:
-                    # YARA rules matched, but no configuration extracted
+                    r = decoder.run(open(sample_path, "rb"), matches=yara_matches)
+
+                if not (r or yara_matches):
+                    # Nothing to report
                     continue
-                else:
-                    # No result
-                    results.pop(decoder.name, None)
+                if r:
+                    result.update({"config": r.dict(exclude_defaults=True, exclude_none=True)})
+
             except Exception as e:
                 # Add exception to results
-                results[decoder.name]["exception"] = str(e)
+                result["exception"] = str(e)
                 self.log.error(e)
+            results.append(result)
         return results
 
     def run_in_venv(self, sample_path: str, extractor: Extractor) -> ExtractorModel:

@@ -1,7 +1,8 @@
 # CAPE framework
-from collections import defaultdict
 from inspect import signature
+from typing import Any, Dict, List
 
+import yara
 from maco.model import ExtractorModel
 
 from configextractor.frameworks.base import Extractor, Framework
@@ -14,40 +15,48 @@ class CAPE(Framework):
             return extractor.module.TLP
         return None
 
-    def validate(self, module):
-        return hasattr(module, "extract_config") and len(signature(module.extract_config).parameters) == 1
+    def validate(self, module: Any) -> bool:
+        if hasattr(module, "extract_config"):
+            s = signature(module.extract_config)
+            # Ensure function isn't part of a class, which doesn't follow CAPE's extractor format
+            return len(s.parameters) == 1 and "self" not in s.parameters
 
-    def run(self, sample_path, parsers):
-        results = defaultdict(dict)
+    def result_template(self, extractor: Extractor, yara_matches: List[yara.Match]) -> Dict[str, str]:
+        template = super().result_template(extractor, yara_matches)
+        template.update(
+            {
+                "author": extractor.module.AUTHOR if hasattr(extractor.module, "AUTHOR") else "<MISSING_AUTHOR>",
+                "description": extractor.module.DESCRIPTION
+                if hasattr(extractor.module, "DESCRIPTION")
+                else "<MISSING_DESCRIPTION>",
+            }
+        )
+
+        return template
+
+    def run(self, sample_path: str, parsers: Dict[Extractor, List[yara.Match]]) -> List[dict]:
+        results = list()
         for parser, yara_matches in parsers.items():
             # Just run CAPE parsers as-is
-            parser_name = CAPE.get_name(parser)
+            parser_path = parser.module_path
             try:
-                results[parser_name].update(
-                    {
-                        "author": parser.module.AUTHOR if hasattr(parser.module, "AUTHOR") else "<MISSING_AUTHOR>",
-                        "description": parser.module.DESCRIPTION
-                        if hasattr(parser.module, "DESCRIPTION")
-                        else "<MISSING_DESCRIPTION>",
-                        "config": {},
-                    }
-                )
+                result = self.result_template(parser, yara_matches)
                 if parser.venv:
                     raise NotImplementedError()
                 else:
-                    result = parser.module.extract_config(open(sample_path, "rb").read())
-                if result:
-                    results[parser_name].update(
-                        {"config": ExtractorModel(**result).dict(exclude_defaults=True, exclude_none=True)}
-                    )
-                elif yara_matches:
-                    # YARA rules matched, but no configuration extracted
+                    cfg = parser.module.extract_config(open(sample_path, "rb").read())
+
+                if not (cfg or yara_matches):
+                    # Nothing of interest to report
                     continue
-                else:
-                    # No result
-                    results.pop(parser_name, None)
+
+                if cfg:
+                    result.update({"config": ExtractorModel(**cfg).dict(exclude_defaults=True, exclude_none=True)})
             except Exception as e:
-                results[parser_name]["exception"] = str(e)
-                self.log.error(f"{parser_name}: {e}")
+                # If an exception was raised at runtime, append to results
+                result["exception"] = str(e)
+                self.log.error(f"{parser_path}: {e}")
+
+            results.append(result)
 
         return results
