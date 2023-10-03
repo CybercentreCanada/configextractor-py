@@ -13,6 +13,7 @@ from typing import Dict, List, Set
 import cart
 import regex
 import yara
+
 from configextractor.frameworks import CAPE, MACO, MWCP
 from configextractor.frameworks.base import Extractor, Framework
 
@@ -37,6 +38,7 @@ class ConfigExtractor:
         yara_rules: List[str] = list()
         yara_rule_names: List[str] = list()
         for parsers_dir in parsers_dirs:
+            parsers_dir = os.path.abspath(parsers_dir)
             self.log.debug("Adding directories within parser directory in case of local dependencies")
             self.log.debug(f"Adding {os.path.join(parsers_dir, os.pardir)} to PATH")
             not_py = [
