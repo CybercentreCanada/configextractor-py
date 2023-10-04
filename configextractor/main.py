@@ -193,6 +193,8 @@ class ConfigExtractor:
             config = config.get("config", {})
             for network_conn in config.get("http", []):
                 network_conn.setdefault("protocol", "http")
+                # Ensure protocol is lowercased
+                network_conn["protocol"] = network_conn["protocol"].lower()
                 uri: str = network_conn.get("uri")
                 if uri and not uri.startswith(network_conn["protocol"]):
                     # Ensure URI starts with protocol
