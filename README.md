@@ -1,5 +1,7 @@
 # ConfigExtractor
 
+<a href="https://pypi.org/project/configextractor-py/#history"><img src="https://img.shields.io/pypi/v/configextractor-py.svg" alt="Latest Stable Release"></a>
+
 Maintainer: @cccs-rs
 
 Python Library for performing configuration extraction across multiple extraction frameworks (ie. Maco, MWCP, etc.). This tool is actively used in the [Assemblyline](https://cybercentrecanada.github.io/assemblyline4_docs/) project as a [service](https://github.com/CybercentreCanada/assemblyline-service-configextractor).
