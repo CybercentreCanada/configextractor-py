@@ -40,12 +40,6 @@ class ConfigExtractor:
             parsers_dir = os.path.abspath(parsers_dir)
             self.log.debug("Adding directories within parser directory in case of local dependencies")
             self.log.debug(f"Adding {os.path.join(parsers_dir, os.pardir)} to PATH")
-            not_py = [
-                file
-                for _, _, files in os.walk(parsers_dir)
-                for file in files
-                if not file.endswith("py") and not file.endswith("pyc")
-            ]
 
             # Specific feature for Assemblyline or environments wanting to run parsers from different sources
             # The goal is to try and introduce package isolation/specification similar to a virtual environment when running parsers
@@ -98,9 +92,6 @@ class ConfigExtractor:
                     # skip setup.py
                     continue
 
-                if any([module_name.split(".")[-1] in np for np in not_py]):
-                    # skip non-Python files
-                    continue
                 self.log.debug(f"Inspecting '{module_name}' for extractors")
 
                 # Local site packages, if any, need to be loaded before attempting to import the module
