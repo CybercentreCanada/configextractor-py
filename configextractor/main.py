@@ -103,6 +103,8 @@ class ConfigExtractor:
                             parser_site_packages = os.path.join(root, "site-packages")
                             sys.path.insert(1, parser_site_packages)
                             break
+                if block_regex and block_regex.match(module_name):
+                    continue
                 try:
                     module = importlib.import_module(module_name)
                 except Exception as e:
