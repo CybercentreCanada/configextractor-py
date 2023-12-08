@@ -1,7 +1,7 @@
 import inspect
 from base64 import b64decode
 from logging import Logger
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from maco.extractor import Extractor as MACO_Extractor
 from maco.model import ExtractorModel
@@ -31,12 +31,16 @@ class Base64Encoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, o)
 
 result = mod.{module_class}().run(open("{sample_path}", 'rb'), matches=yara.compile("{yara_rule}").match("{sample_path}"))
+
 with open("{output_path}", 'w') as fp:
-    try:
-        json.dump(result.model_dump(exclude_defaults=True, exclude_none=True), fp, cls=Base64Encoder)
-    except AttributeError:
-        # venv likely has an older version of Pydantic installed
-        json.dump(result.dict(exclude_defaults=True, exclude_none=True), fp, cls=Base64Encoder)
+    if not result:
+        json.dump(dict(), fp)
+    else:
+        try:
+            json.dump(result.model_dump(exclude_defaults=True, exclude_none=True), fp, cls=Base64Encoder)
+        except AttributeError:
+            # venv likely has an older version of Pydantic < 2 installed
+            json.dump(result.dict(exclude_defaults=True, exclude_none=True), fp, cls=Base64Encoder)
 """
 
     @staticmethod
@@ -89,11 +93,11 @@ with open("{output_path}", 'w') as fp:
             results.append(result)
         return results
 
-    def run_in_venv(self, sample_path: str, extractor: Extractor) -> ExtractorModel:
+    def run_in_venv(self, sample_path: str, extractor: Extractor) -> Union[ExtractorModel, None]:
         # Load results and apply them against the model
         result = super().run_in_venv(sample_path, extractor)
         for b in result.get("binaries", []):
             if b.get("data"):
                 # Decode base64-encoded binaries
                 b["data"] = b64decode(b["data"])
-        return ExtractorModel(**result)
+        return ExtractorModel(**result) if result else None
