@@ -15,11 +15,13 @@ class MACO(Framework):
         self.venv_script = """
 import importlib
 import json
+import os
 import sys
 import yara
 
 from base64 import b64encode
-sys.path.insert(1, "{module_package_path}")
+parent_package_path = os.path.dirname(__file__).rsplit("{module_name}".split('.', 1)[0], 1)[0]
+sys.path.insert(1, parent_package_path)
 mod = importlib.import_module("{module_name}")
 
 class Base64Encoder(json.JSONEncoder):

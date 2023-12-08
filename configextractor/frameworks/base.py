@@ -1,7 +1,6 @@
 import json
 import os
 import subprocess
-import sys
 from logging import Logger
 from tempfile import NamedTemporaryFile
 from typing import Any, Dict, List
@@ -70,17 +69,10 @@ class Framework:
                 with NamedTemporaryFile() as output:
                     module_name = extractor.module.__module__
                     module_class = extractor.module.__name__
-                    module_package_path = None
-                    for path in sys.path:
-                        # Look for the package path that's relevant to the module path of the extractor
-                        if extractor.module_path.startswith(path) and path.endswith(module_name.split(".", 1)[0]):
-                            module_package_path = os.path.dirname(path)
-                            break
                     script.write(
                         self.venv_script.format(
                             module_name=module_name,
                             module_class=module_class,
-                            module_package_path=module_package_path,
                             sample_path=sample_path,
                             output_path=output.name,
                             yara_rule=yara_rule.name,

@@ -188,11 +188,13 @@ class MWCP(Framework):
         super().__init__(logger, yara_attr_name)
         self.venv_script = """
 import importlib
+import os
 import sys
 import json
 import mwcp
 
-sys.path.insert(1, "{module_package_path}")
+parent_package_path = os.path.dirname(__file__).rsplit("{module_name}".split('.', 1)[0], 1)[0]
+sys.path.insert(1, parent_package_path)
 mod = importlib.import_module("{module_name}")
 
 result = mwcp.run(mod.{module_class}, data=open("{sample_path}", "rb").read())
