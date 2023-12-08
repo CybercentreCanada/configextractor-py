@@ -13,10 +13,14 @@ class MACO(Framework):
     def __init__(self, logger: Logger, yara_attr_name=None):
         super().__init__(logger, yara_attr_name)
         self.venv_script = """
+import importlib
 import json
+import sys
 import yara
+
 from base64 import b64encode
-from .{module_name} import {module_class}
+sys.path.insert(1, "{module_package_path}")
+mod = importlib.import_module("{module_name}")
 
 class Base64Encoder(json.JSONEncoder):
     def default(self, o):
@@ -24,9 +28,13 @@ class Base64Encoder(json.JSONEncoder):
             return b64encode(o).decode()
         return json.JSONEncoder.default(self, o)
 
-result = {module_class}().run(open("{sample_path}", 'rb'), matches=yara.compile("{yara_rule}").match("{sample_path}"))
+result = mod.{module_class}().run(open("{sample_path}", 'rb'), matches=yara.compile("{yara_rule}").match("{sample_path}"))
 with open("{output_path}", 'w') as fp:
-    json.dump(result.dict(exclude_defaults=True, exclude_none=True), fp, cls=Base64Encoder)
+    try:
+        json.dump(result.model_dump(exclude_defaults=True, exclude_none=True), fp, cls=Base64Encoder)
+    except AttributeError:
+        # venv likely has an older version of Pydantic installed
+        json.dump(result.dict(exclude_defaults=True, exclude_none=True), fp, cls=Base64Encoder)
 """
 
     @staticmethod

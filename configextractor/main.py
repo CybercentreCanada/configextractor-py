@@ -72,7 +72,10 @@ class ConfigExtractor:
 
                 def find_venv(path: str) -> str:
                     parent_dir = os.path.dirname(path)
-                    if parent_dir == parsers_dir or path == parsers_dir:
+                    if "venv" in os.listdir(path):
+                        # venv is in the same directory as the parser
+                        return os.path.join(path, "venv")
+                    elif parent_dir == parsers_dir or path == parsers_dir:
                         # We made it all the way back to the parser directory
                         # Use root venv, if any
                         return root_venv
