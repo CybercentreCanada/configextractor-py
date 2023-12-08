@@ -34,6 +34,9 @@ class CAPE(Framework):
 
         return template
 
+    def run_in_venv(self, sample_path: str, extractor: Extractor) -> Dict[str, dict]:
+        raise NotImplementedError()
+
     def run(self, sample_path: str, parsers: Dict[Extractor, List[yara.Match]]) -> List[dict]:
         results = list()
         for parser, yara_matches in parsers.items():
@@ -50,7 +53,9 @@ class CAPE(Framework):
                     continue
 
                 if cfg:
-                    result.update({"config": ExtractorModel(**cfg).dict(exclude_defaults=True, exclude_none=True)})
+                    result.update(
+                        {"config": ExtractorModel(**cfg).model_dump(exclude_defaults=True, exclude_none=True)}
+                    )
             except Exception as e:
                 # If an exception was raised at runtime, append to results
                 result["exception"] = str(e)

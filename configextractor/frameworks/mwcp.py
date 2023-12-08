@@ -187,11 +187,17 @@ class MWCP(Framework):
     def __init__(self, logger: Logger, yara_attr_name=None):
         super().__init__(logger, yara_attr_name)
         self.venv_script = """
+import importlib
+import os
+import sys
 import json
 import mwcp
-from .{module_name} import {module_class}
 
-result = mwcp.run({module_class}, data=open("{sample_path}", "rb").read())
+parent_package_path = os.path.dirname(__file__).rsplit("{module_name}".split('.', 1)[0], 1)[0]
+sys.path.insert(1, parent_package_path)
+mod = importlib.import_module("{module_name}")
+
+result = mwcp.run(mod.{module_class}, data=open("{sample_path}", "rb").read())
 with open("{output_path}", 'w') as fp:
     json.dump(result.as_json_dict(), fp)
 """
@@ -242,7 +248,7 @@ with open("{output_path}", 'w') as fp:
                 r["family"] = family
                 result.update(
                     {
-                        "config": ExtractorModel(**r).dict(exclude_defaults=True, exclude_none=True),
+                        "config": ExtractorModel(**r).model_dump(exclude_defaults=True, exclude_none=True),
                     }
                 )
 

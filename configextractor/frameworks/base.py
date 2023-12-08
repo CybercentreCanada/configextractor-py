@@ -67,7 +67,7 @@ class Framework:
                 yara_rule.write(extractor.rule)
                 yara_rule.flush()
                 with NamedTemporaryFile() as output:
-                    module_name = extractor.module.__module__.split(".")[-1]
+                    module_name = extractor.module.__module__
                     module_class = extractor.module.__name__
                     script.write(
                         self.venv_script.format(

@@ -1,7 +1,7 @@
 import inspect
 from base64 import b64decode
 from logging import Logger
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from maco.extractor import Extractor as MACO_Extractor
 from maco.model import ExtractorModel
@@ -13,10 +13,16 @@ class MACO(Framework):
     def __init__(self, logger: Logger, yara_attr_name=None):
         super().__init__(logger, yara_attr_name)
         self.venv_script = """
+import importlib
 import json
+import os
+import sys
 import yara
+
 from base64 import b64encode
-from .{module_name} import {module_class}
+parent_package_path = os.path.dirname(__file__).rsplit("{module_name}".split('.', 1)[0], 1)[0]
+sys.path.insert(1, parent_package_path)
+mod = importlib.import_module("{module_name}")
 
 class Base64Encoder(json.JSONEncoder):
     def default(self, o):
@@ -24,9 +30,17 @@ class Base64Encoder(json.JSONEncoder):
             return b64encode(o).decode()
         return json.JSONEncoder.default(self, o)
 
-result = {module_class}().run(open("{sample_path}", 'rb'), matches=yara.compile("{yara_rule}").match("{sample_path}"))
+result = mod.{module_class}().run(open("{sample_path}", 'rb'), matches=yara.compile("{yara_rule}").match("{sample_path}"))
+
 with open("{output_path}", 'w') as fp:
-    json.dump(result.dict(exclude_defaults=True, exclude_none=True), fp, cls=Base64Encoder)
+    if not result:
+        json.dump(dict(), fp)
+    else:
+        try:
+            json.dump(result.model_dump(exclude_defaults=True, exclude_none=True), fp, cls=Base64Encoder)
+        except AttributeError:
+            # venv likely has an older version of Pydantic < 2 installed
+            json.dump(result.dict(exclude_defaults=True, exclude_none=True), fp, cls=Base64Encoder)
 """
 
     @staticmethod
@@ -79,11 +93,11 @@ with open("{output_path}", 'w') as fp:
             results.append(result)
         return results
 
-    def run_in_venv(self, sample_path: str, extractor: Extractor) -> ExtractorModel:
+    def run_in_venv(self, sample_path: str, extractor: Extractor) -> Union[ExtractorModel, None]:
         # Load results and apply them against the model
         result = super().run_in_venv(sample_path, extractor)
         for b in result.get("binaries", []):
             if b.get("data"):
                 # Decode base64-encoded binaries
                 b["data"] = b64decode(b["data"])
-        return ExtractorModel(**result)
+        return ExtractorModel(**result) if result else None
