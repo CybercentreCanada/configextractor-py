@@ -45,6 +45,7 @@ class Framework:
     def extract_yara_from_module(self, decoder: object) -> List[str]:
         if self.yara_attr_name and hasattr(decoder, self.yara_attr_name) and getattr(decoder, self.yara_attr_name):
             yara_parser = plyara.Plyara()
+            yara_parser.STRING_ESCAPE_CHARS.add("r")
             return [
                 rebuild_yara_rule(yara_rule_frag)
                 for yara_rule_frag in yara_parser.parse_string(getattr(decoder, self.yara_attr_name))
