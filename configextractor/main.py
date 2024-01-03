@@ -7,8 +7,9 @@ import shutil
 import sys
 import tempfile
 from collections import defaultdict
+from glob import glob
 from logging import Logger, getLogger
-from typing import Dict, List, Set
+from typing import Dict, List
 
 import cart
 import regex
@@ -101,11 +102,9 @@ class ConfigExtractor:
                 parser_venv = find_venv(module_path.path)
                 parser_site_packages = None
                 if parser_venv:
-                    for root, dirs, _ in os.walk(parser_venv):
-                        if "site-packages" in dirs:
-                            parser_site_packages = os.path.join(root, "site-packages")
-                            sys.path.insert(1, parser_site_packages)
-                            break
+                    for dir in glob(os.path.join(parser_venv, "lib/python*/site-packages")):
+                        sys.path.insert(1, dir)
+                        break
                 if block_regex and block_regex.match(module_name):
                     continue
                 try:
