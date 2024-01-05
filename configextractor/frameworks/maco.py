@@ -43,8 +43,10 @@ class Base64Encoder(json.JSONEncoder):
         if isinstance(o, bytes):
             return dict(__class__="bytes", data=b64encode(o).decode())
         return json.JSONEncoder.default(self, o)
-
-result = mod.{module_class}().run(open("{sample_path}", 'rb'), matches=yara.compile(source=mod.{module_class}.yara_rule).match("{sample_path}"))
+matches = []
+if mod.{module_class}.yara_rule:
+    matches = yara.compile(source=mod.{module_class}.yara_rule).match("{sample_path}")
+result = mod.{module_class}().run(open("{sample_path}", 'rb'), matches=matches)
 
 with open("{output_path}", 'w') as fp:
     if not result:
