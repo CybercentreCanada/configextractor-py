@@ -113,8 +113,4 @@ with open("{output_path}", 'w') as fp:
     def run_in_venv(self, sample_path: str, extractor: Extractor) -> Union[ExtractorModel, None]:
         # Load results and apply them against the model
         result = json.loads(json.dumps(super().run_in_venv(sample_path, extractor)), cls=Base64Decoder)
-        for b in result.get("binaries", []):
-            if b.get("data"):
-                # Decode base64-encoded binaries
-                b["data"] = b64decode(b["data"])
         return ExtractorModel(**result) if result else None
