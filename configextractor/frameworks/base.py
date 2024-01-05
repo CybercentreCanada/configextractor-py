@@ -64,38 +64,34 @@ class Framework:
         # Write temporary script in the same directory as extractor to resolve relative imports
         python_exe = os.path.join(extractor.venv, "bin", "python")
         with NamedTemporaryFile("w", dir=os.path.dirname(extractor.module_path), suffix=".py") as script:
-            with NamedTemporaryFile("w") as yara_rule:
-                yara_rule.write(extractor.rule)
-                yara_rule.flush()
-                with NamedTemporaryFile() as output:
-                    module_name = extractor.module.__module__
-                    module_class = extractor.module.__name__
-                    script.write(
-                        self.venv_script.format(
-                            module_name=module_name,
-                            module_class=module_class,
-                            sample_path=sample_path,
-                            output_path=output.name,
-                            yara_rule=yara_rule.name,
-                        )
+            with NamedTemporaryFile() as output:
+                module_name = extractor.module.__module__
+                module_class = extractor.module.__name__
+                script.write(
+                    self.venv_script.format(
+                        module_name=module_name,
+                        module_class=module_class,
+                        sample_path=sample_path,
+                        output_path=output.name,
                     )
-                    script.flush()
-                    custom_module = (
-                        script.name.split(".py")[0].replace(f"{extractor.root_directory}/", "").replace("/", ".")
-                    )
-                    proc = subprocess.run(
-                        [python_exe, "-m", custom_module],
-                        cwd=extractor.root_directory,
-                        capture_output=True,
-                    )
-                    try:
-                        # Load results and return them
-                        output.seek(0)
-                        return json.load(output)
-                    except Exception:
-                        # If there was an error raised during runtime, then propagate
-                        delim = f'File "{extractor.module_path}"'
-                        exception = proc.stderr.decode()
-                        if delim in exception:
-                            exception = f"{delim}{exception.split(delim, 1)[1]}"
-                        raise Exception(exception)
+                )
+                script.flush()
+                custom_module = (
+                    script.name.split(".py")[0].replace(f"{extractor.root_directory}/", "").replace("/", ".")
+                )
+                proc = subprocess.run(
+                    [python_exe, "-m", custom_module],
+                    cwd=extractor.root_directory,
+                    capture_output=True,
+                )
+                try:
+                    # Load results and return them
+                    output.seek(0)
+                    return json.load(output)
+                except Exception:
+                    # If there was an error raised during runtime, then propagate
+                    delim = f'File "{extractor.module_path}"'
+                    exception = proc.stderr.decode()
+                    if delim in exception:
+                        exception = f"{delim}{exception.split(delim, 1)[1]}"
+                    raise Exception(exception)
