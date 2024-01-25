@@ -8,7 +8,7 @@ with open("requirements.txt", "r") as fh:
 
 setup(
     name="configextractor-py",
-    python_requires=">=3.8,<=3.11",
+    python_requires=">=3.8",
     use_scm_version=True,
     setup_requires=["setuptools_scm"],
     description="A library for extracting malware configurations across multiple frameworks",
