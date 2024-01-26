@@ -18,7 +18,8 @@ jobs:
           python.version: "3.10"
         Python3_11:
           python.version: "3.11"
-        # TODO: Look at cart support
+        # TODO: https://github.com/dod-cyber-crime-center/DC3-MWCP/pull/43
+        # Update to construct package would be required
         # Python3_12:
         #   python.version: "3.12"
 
