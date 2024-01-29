@@ -13,7 +13,7 @@ def cx():
 
     dir = os.path.dirname(__file__)
     shutil.copytree(os.path.join(dir, "parsers"), os.path.join(dir, "venv_parsers"), dirs_exist_ok=True)
-    yield ConfigExtractor(["tests/venv_parsers"])
+    yield ConfigExtractor(["tests/venv_parsers"], create_venv=True)
 
 
 def test_finalize_uri(cx):
