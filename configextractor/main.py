@@ -51,7 +51,7 @@ class ConfigExtractor:
                             logger.info(f"Creating venv at: {venv_path}")
                             subprocess.run([python_exe, "-m", "venv", venv_path], capture_output=True)
                         p = subprocess.run(
-                            [os.path.join(root, "venv/bin/pip"), "install", "-U", "-r", "requirements.txt"],
+                            [os.path.join(venv_path, "bin/pip"), "install", "-U", "-r", "requirements.txt"],
                             cwd=root,
                             capture_output=True,
                         )
@@ -60,8 +60,8 @@ class ConfigExtractor:
                             if b"is being installed using the legacy" in p.stderr:
                                 # Ignore these types of errors
                                 continue
-                            logger.error(f"error installing {rpath} into venv:\n{p.stderr.decode()}")
-                        logger.debug(f"installed {rpath} into venv:\n{p.stdout}")
+                            logger.error(f"Error installing {rpath} into venv:\n{p.stderr.decode()}")
+                        logger.debug(f"Installed {rpath} into venv:\n{p.stdout}")
 
             parsers_dir = os.path.abspath(parsers_dir)
             self.log.debug("Adding directories within parser directory in case of local dependencies")
