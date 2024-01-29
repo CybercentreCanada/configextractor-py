@@ -4,11 +4,13 @@ import inspect
 import os
 import pkgutil
 import shutil
+import subprocess
 import sys
 import tempfile
 from collections import defaultdict
 from glob import glob
 from logging import Logger, getLogger
+from sys import executable as python_exe
 from typing import Dict, List
 
 import cart
@@ -27,6 +29,7 @@ class ConfigExtractor:
         parsers_dirs: List[str],
         logger: Logger = None,
         parser_blocklist: List[str] = [],
+        create_venv: bool = False,
     ) -> None:
         if not logger:
             logger = getLogger()
@@ -38,6 +41,28 @@ class ConfigExtractor:
         self.parsers: Dict[str, Extractor] = dict()
         namespaced_yara_rules: Dict[str, List[str]] = dict()
         for parsers_dir in parsers_dirs:
+            if create_venv:
+                # Recursively look for "requirements.txt" files and create a virtual environment
+                for root, _, files in os.walk(parsers_dir):
+                    if "requirements.txt" in files:
+                        # Create/Update a venv relative to the requirements file
+                        venv_path = os.path.join(root, "venv")
+                        if not os.path.exists(venv_path):
+                            logger.info(f"Creating venv at: {venv_path}")
+                            subprocess.run([python_exe, "-m", "venv", venv_path], capture_output=True)
+                        p = subprocess.run(
+                            [os.path.join(root, "venv/bin/pip"), "install", "-U", "-r", "requirements.txt"],
+                            cwd=root,
+                            capture_output=True,
+                        )
+                        rpath = os.path.join(root, "requirements.txt")
+                        if p.stderr:
+                            if b"is being installed using the legacy" in p.stderr:
+                                # Ignore these types of errors
+                                continue
+                            logger.error(f"error installing {rpath} into venv:\n{p.stderr.decode()}")
+                        logger.debug(f"installed {rpath} into venv:\n{p.stdout}")
+
             parsers_dir = os.path.abspath(parsers_dir)
             self.log.debug("Adding directories within parser directory in case of local dependencies")
             self.log.debug(f"Adding {os.path.join(parsers_dir, os.pardir)} to PATH")

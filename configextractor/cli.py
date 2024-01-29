@@ -37,11 +37,17 @@ from configextractor.main import ConfigExtractor
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
     default="WARNING",
 )
-def main(parsers_paths, sample_paths, block, verbosity) -> None:
+@click.option(
+    "--create_venv",
+    help="Create venvs whenever you encounter a requirements.txt file during scanning",
+    is_flag=True,
+    default=False,
+)
+def main(parsers_paths, sample_paths, block, verbosity, create_venv) -> None:
     logger = logging.getLogger("cx")
     logger.setLevel(verbosity)
     logger.addHandler(logging.StreamHandler())
-    cx = ConfigExtractor(parsers_paths, parser_blocklist=block, logger=logger)
+    cx = ConfigExtractor(parsers_paths, parser_blocklist=block, logger=logger, create_venv=create_venv)
 
     # Check if path given is a directory or a file
     results = dict()
