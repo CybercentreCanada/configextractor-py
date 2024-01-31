@@ -1,3 +1,4 @@
+import binascii
 import json
 import logging
 import os
@@ -64,7 +65,9 @@ def main(parsers_paths, sample_paths, block, verbosity, create_venv) -> None:
                         results[file_path] = result
 
     print("Results:")
-    print(json.dumps(results, indent=2))
+    print(json.dumps(results,
+                     indent=2,
+                     default=lambda x: binascii.hexlify(x[:32]).decode("utf8").upper() if isinstance(x, bytes) else None))
 
 
 if __name__ == "__main__":
