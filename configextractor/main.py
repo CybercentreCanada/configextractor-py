@@ -51,7 +51,7 @@ class ConfigExtractor:
                             logger.info(f"Creating venv at: {venv_path}")
                             subprocess.run([python_exe, "-m", "venv", venv_path], capture_output=True)
                         p = subprocess.run(
-                            [os.path.join(venv_path, "bin/pip"), "install", "-U", "-r", "requirements.txt"],
+                            ["venv/bin/pip", "install", "-U", "-r", "requirements.txt", "--disable-pip-version-check"],
                             cwd=root,
                             capture_output=True,
                         )
