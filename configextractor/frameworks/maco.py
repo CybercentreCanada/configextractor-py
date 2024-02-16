@@ -77,7 +77,6 @@ with open("{output_path}", 'w') as fp:
             {
                 "author": decoder.author,
                 "description": decoder.__doc__,
-                "config": {"family": decoder.family if hasattr(decoder, "family") else decoder.__class__.__name__},
             }
         )
         return template
