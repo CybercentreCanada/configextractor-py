@@ -237,6 +237,7 @@ class ConfigExtractor:
             else:
                 # Make a copy of the file to the temporary location
                 sample_copy.write(buf)
+                sample_copy.flush()
 
             # Get YARA-dependent parsers that should run based on match
             for yara_match in self.yara.match(sample_copy.name):
