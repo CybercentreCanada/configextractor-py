@@ -8,5 +8,5 @@ class TestMACO(Extractor):
     last_modified = "2023-12-07"
 
     def run(self, stream, matches):
-        cfg = ExtractorModel(family="test")
+        cfg = ExtractorModel(family="test", decoded_strings=[stream.read()])
         return cfg

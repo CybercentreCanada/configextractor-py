@@ -42,3 +42,15 @@ def test_venv(cx):
 
         # Test running MWCP extractors in venv mode
         assert MWCP(logger=None).run_in_venv(sample_path=sample.name, extractor=mwcp)
+
+
+def test_itty_bitty_file(cx):
+    maco: Extractor = cx.parsers["venv_parsers.maco_extractor.TestMACO"]
+    file_content = b"Hello world"
+
+    # Create a small test file to run with the extractor
+    with NamedTemporaryFile(delete=False) as sample:
+        sample.write(file_content)
+        sample.flush()
+
+        assert cx.run_parsers(sample.name)["MACO"][0]["config"]["decoded_strings"] == [file_content.decode()]
