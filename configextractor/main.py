@@ -12,6 +12,7 @@ from glob import glob
 from logging import Logger, getLogger
 from sys import executable as python_exe
 from typing import Dict, List
+from urllib.parse import urlparse
 
 import cart
 import regex
@@ -219,6 +220,12 @@ class ConfigExtractor:
                 if uri and not uri.startswith(network_conn["protocol"]):
                     # Ensure URI starts with protocol
                     network_conn["uri"] = f"{network_conn['protocol']}://{uri}"
+                # Parse the URI and fill in missing sections where possible
+                parsed_uri = urlparse(uri)
+                for part in ["username", "password", "hostname", "port", "path", "query", "fragment"]:
+                    value = network_conn.get(part, getattr(parsed_uri, part))
+                    if value:
+                        network_conn[part] = value
 
     def run_parsers(self, sample, parser_blocklist=[]):
         results = dict()

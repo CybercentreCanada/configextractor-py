@@ -54,3 +54,18 @@ def test_itty_bitty_file(cx):
         sample.flush()
 
         assert cx.run_parsers(sample.name)["MACO"][0]["config"]["decoded_strings"] == [file_content.decode()]
+
+
+def test_uri_expansion(cx):
+    # If only a URI is provided in the results, then let's fill in what we know
+    result = {"config": {"http": [{"uri": "https://abc:80/path/to?string=true#hello"}]}}
+    cx.finalize([result])
+    assert result["config"]["http"][0] == {
+        "uri": "https://abc:80/path/to?string=true#hello",
+        "protocol": "http",
+        "hostname": "abc",
+        "port": 80,
+        "path": "/path/to",
+        "query": "string=true",
+        "fragment": "hello",
+    }
