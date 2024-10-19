@@ -7,7 +7,11 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import tomllib
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 from collections import defaultdict
 from glob import glob
