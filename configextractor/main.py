@@ -7,6 +7,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import tomllib
+
 from collections import defaultdict
 from glob import glob
 from logging import Logger, getLogger
@@ -43,20 +45,35 @@ class ConfigExtractor:
         namespaced_yara_rules: Dict[str, List[str]] = dict()
         for parsers_dir in parsers_dirs:
             if create_venv:
-                # Recursively look for "requirements.txt" files and create a virtual environment
+                # Recursively look for "requirements.txt" or "pyproject.toml" files and create a virtual environment
                 for root, _, files in os.walk(parsers_dir):
-                    if "requirements.txt" in files:
-                        # Create/Update a venv relative to the requirements file
+                    req_file = list({"pyproject.toml", "requirements.txt"}.intersection(set(files)))
+                    if req_file:
+                        req_file = req_file[0]
+                        rpath = os.path.join(root, req_file)
                         venv_path = os.path.join(root, "venv")
+                        dependencies = []
+
+                        # Create a venv environment if it doesn't already exist
                         if not os.path.exists(venv_path):
                             logger.info(f"Creating venv at: {venv_path}")
                             subprocess.run([python_exe, "-m", "venv", venv_path], capture_output=True)
+
+                        with open(rpath, "r") as f:
+                            if req_file == "pyproject.toml":
+                                # Parse TOML file to retrieve the dependencies
+                                dependencies = tomllib.loads(f.read())["project"]["dependencies"]
+                            elif req_file == "requirements.txt":
+                                dependencies = [d for d in f.read().splitlines() if d and not d.startswith("#")]
+
+                        # Install/Update packages within the venv relative the dependencies extracted
+                        logger.debug(f"Packages to be installed: {dependencies}")
                         p = subprocess.run(
-                            ["venv/bin/pip", "install", "-U", "-r", "requirements.txt", "--disable-pip-version-check"],
+                            ["venv/bin/pip", "install", "-U"] + dependencies + ["--disable-pip-version-check"],
                             cwd=root,
                             capture_output=True,
                         )
-                        rpath = os.path.join(root, "requirements.txt")
+
                         if p.stderr:
                             if b"is being installed using the legacy" in p.stderr:
                                 # Ignore these types of errors
@@ -79,6 +96,9 @@ class ConfigExtractor:
             original_dir = parsers_dir
             sys.path.insert(1, path_parent)
             sys.path.insert(1, parsers_dir)
+            if "src" in os.listdir(parsers_dir):
+                # The actual module might be located in the src subdirectory
+                sys.path.insert(1, os.path.join(parsers_dir, "src"))
             mod = importlib.import_module(foldername)
 
             if mod.__file__ and not mod.__file__.startswith(parsers_dir):
