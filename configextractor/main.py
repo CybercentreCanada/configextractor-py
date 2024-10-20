@@ -102,8 +102,22 @@ class ConfigExtractor:
             sys.path.insert(1, parsers_dir)
             if "src" in os.listdir(parsers_dir):
                 # The actual module might be located in the src subdirectory
-                sys.path.insert(1, os.path.join(parsers_dir, "src"))
-            mod = importlib.import_module(foldername)
+                # Ref: https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/
+                src_path = os.path.join(parsers_dir, "src")
+                sys.path.insert(1, src_path)
+
+                # The module to be loaded should be the directory within src
+                foldername = [d for d in os.listdir(src_path) if os.path.isdir(os.path.join(src_path, d))][0]
+
+            if root_venv:
+                # Insert the venv's site-packages into the PATH temporarily to load the module
+                for dir in glob(os.path.join(root_venv, "lib/python*/site-packages")):
+                    sys.path.insert(2, dir)
+                    break
+                mod = importlib.import_module(foldername)
+                sys.path.pop(2)
+            else:
+                mod = importlib.import_module(foldername)
 
             if mod.__file__ and not mod.__file__.startswith(parsers_dir):
                 # Library confused folder name with installed package

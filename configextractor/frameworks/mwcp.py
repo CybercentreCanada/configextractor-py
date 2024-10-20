@@ -193,7 +193,7 @@ import sys
 import json
 import mwcp
 
-parent_package_path = os.path.dirname(__file__).rsplit("{module_name}".split('.', 1)[0], 1)[0]
+parent_package_path = "{parent_package_path}"
 sys.path.insert(1, parent_package_path)
 mod = importlib.import_module("{module_name}")
 
