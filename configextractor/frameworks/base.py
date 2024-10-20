@@ -63,12 +63,16 @@ class Framework:
     def run_in_venv(self, sample_path: str, extractor: Extractor) -> Dict[str, dict]:
         # Write temporary script in the same directory as extractor to resolve relative imports
         python_exe = os.path.join(extractor.venv, "bin", "python")
-        with NamedTemporaryFile("w", dir=os.path.dirname(extractor.module_path), suffix=".py") as script:
+        dirname = os.path.dirname(extractor.module_path)
+        with NamedTemporaryFile("w", dir=dirname, suffix=".py") as script:
             with NamedTemporaryFile() as output:
                 module_name = extractor.module.__module__
                 module_class = extractor.module.__name__
+                parent_package_path = dirname.rsplit(module_name.split('.', 1)[0], 1)[0]
+
                 script.write(
                     self.venv_script.format(
+                        parent_package_path=parent_package_path,
                         module_name=module_name,
                         module_class=module_class,
                         sample_path=sample_path,
@@ -76,12 +80,19 @@ class Framework:
                     )
                 )
                 script.flush()
+                cwd = extractor.root_directory
                 custom_module = (
                     script.name.split(".py")[0].replace(f"{extractor.root_directory}/", "").replace("/", ".")
                 )
+
+                if custom_module.startswith('src.'):
+                    # src layout found, which means the actual module content is within 'src' directory
+                    custom_module = custom_module[4:]
+                    cwd = os.path.join(cwd, 'src')
+
                 proc = subprocess.run(
                     [python_exe, "-m", custom_module],
-                    cwd=extractor.root_directory,
+                    cwd=cwd,
                     capture_output=True,
                 )
                 try:
