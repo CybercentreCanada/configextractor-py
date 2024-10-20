@@ -64,26 +64,48 @@ class ConfigExtractor:
                             subprocess.run([python_exe, "-m", "venv", venv_path], capture_output=True)
 
                         with open(rpath, "r") as f:
-                            if req_file == "pyproject.toml":
-                                # Parse TOML file to retrieve the dependencies
-                                dependencies = tomllib.loads(f.read())["project"]["dependencies"]
-                            elif req_file == "requirements.txt":
+                            if req_file == "requirements.txt":
+                                # Parse requirements.txt file to retrieve dependencies
                                 dependencies = [d for d in f.read().splitlines() if d and not d.startswith("#")]
+                            elif req_file == "pyproject.toml":
+                                # Parse TOML file to retrieve the dependencies
+                                # Ref: https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#dependencies-and-requirements
 
-                        # Install/Update packages within the venv relative the dependencies extracted
-                        logger.debug(f"Packages to be installed: {dependencies}")
-                        p = subprocess.run(
-                            ["venv/bin/pip", "install", "-U"] + dependencies + ["--disable-pip-version-check"],
-                            cwd=root,
-                            capture_output=True,
-                        )
+                                parsed_toml_project = tomllib.loads(f.read()).get("project", {})
 
-                        if p.stderr:
-                            if b"is being installed using the legacy" in p.stderr:
-                                # Ignore these types of errors
-                                continue
-                            logger.error(f"Error installing {rpath} into venv:\n{p.stderr.decode()}")
-                        logger.debug(f"Installed {rpath} into venv:\n{p.stdout}")
+                                if "dependencies" in parsed_toml_project:
+                                    # Retrieve required dependencies
+                                    dependencies.extend(parsed_toml_project["dependencies"])
+
+                                if "optional-dependencies" in parsed_toml_project:
+                                    # Retrieve optional dependencies
+                                    optional_dependencies = parsed_toml_project["optional-dependencies"]
+                                    if isinstance(optional_dependencies, list):
+                                        # Flat list of optional dependencies
+                                        dependencies.extend(optional_dependencies)
+
+                                    elif isinstance(optional_dependencies, dict):
+                                        # Map of dependencies, install them all for good measure
+                                        for dependencies_list in optional_dependencies.values():
+                                            dependencies.extend(dependencies_list)
+
+                        if dependencies:
+                            # Install/Update packages within the venv relative the dependencies extracted
+                            logger.debug(f"Packages to be installed: {dependencies}")
+                            p = subprocess.run(
+                                ["venv/bin/pip", "install", "-U"] + dependencies + ["--disable-pip-version-check"],
+                                cwd=root,
+                                capture_output=True,
+                            )
+
+                            if p.stderr:
+                                if b"is being installed using the legacy" in p.stderr:
+                                    # Ignore these types of errors
+                                    continue
+                                logger.error(f"Error installing {rpath} into venv:\n{p.stderr.decode()}")
+                            logger.debug(f"Installed {rpath} into venv:\n{p.stdout}")
+                        else:
+                            logger.warning("No dependencies extracted from project files..")
 
             parsers_dir = os.path.abspath(parsers_dir)
             self.log.debug("Adding directories within parser directory in case of local dependencies")
