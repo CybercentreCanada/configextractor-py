@@ -1,8 +1,6 @@
 MIT License
 
-Copyright (c) 2024 Crown Copyright, Government of Canada (Canadian Centre for Cyber Security / Communications Security Establishment) and Government of Australia (Australian Cyber Security Centre / Australian Signals Directorate)
-
-Copyright title to all 3rd party software distributed with maco is held by the respective copyright holders as noted in those files. Users are asked to read the 3rd Party Licenses referenced with those assets.
+Copyright (c) 2024 Crown Copyright, Government of Canada (Canadian Centre for Cyber Security / Communications Security Establishment)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
