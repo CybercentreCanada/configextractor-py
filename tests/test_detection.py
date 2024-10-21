@@ -33,7 +33,7 @@ def test_mwcp_detection(cx):
 
 
 @pytest.mark.parametrize(
-    "repository_url, extractor_path, extractors",
+    "repository_url, extractor_path, extractors, python_minor",
     [
         (
             "https://github.com/jeFF0Falltrades/rat_king_parser",
