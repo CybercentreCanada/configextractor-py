@@ -119,7 +119,6 @@ class ConfigExtractor:
     def run_parsers(self, sample, parser_blocklist=[]):
         results = dict()
         parsers_to_run = defaultdict(lambda: defaultdict(list))
-        parser_names = list()
         block_regex = regex.compile("|".join(parser_blocklist)) if parser_blocklist else None
 
         with tempfile.NamedTemporaryFile() as sample_copy:
@@ -154,7 +153,9 @@ class ConfigExtractor:
 
             for framework, parser_list in parsers_to_run.items():
                 if parser_list:
-                    self.log.debug(f"Running the following under the {framework} framework with YARA: {parser_names}")
+                    self.log.debug(
+                        f"Running the following under the {framework} framework with YARA: {[p.id for p in parser_list]}"
+                    )
                     result = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(sample_copy.name, parser_list)
                     self.finalize(result)
                     if result:
