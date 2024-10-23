@@ -6,22 +6,9 @@ from typing import Any, Dict, List, Union
 
 from maco.extractor import Extractor as MACO_Extractor
 from maco.model import ExtractorModel
-from maco.utils import VENV_SCRIPT as MACO_VENV_SCRIPT, maco_extractor_validation
+from maco.utils import VENV_SCRIPT as MACO_VENV_SCRIPT, maco_extractor_validation, Base64Decoder
 
 from configextractor.frameworks.base import Extractor, Framework
-
-
-class Base64Decoder(json.JSONDecoder):
-    def __init__(self, *args, **kwargs):
-        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
-
-    def object_hook(self, obj):
-        if "__class__" not in obj:
-            return obj
-        type = obj["__class__"]
-        if type == "bytes":
-            return b64decode(obj["data"])
-        return obj
 
 
 class MACO(Framework):

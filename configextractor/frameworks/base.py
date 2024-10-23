@@ -68,7 +68,6 @@ class Framework:
             extractor.module,
             extractor.module_path,
             extractor.venv,
-            extractor.root_directory,
             self.venv_script,
             json_decoder=None,
         )
