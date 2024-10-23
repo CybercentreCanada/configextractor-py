@@ -1,2 +1,5 @@
 pytest
 git-python
+
+# Test with latest MACO code
+git+https://github.com/CybercentreCanada/Maco.git
