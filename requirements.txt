@@ -1,8 +1,7 @@
 cart
 click
-maco
+maco >= 1.1.6
 mwcfg
 mwcp
 plyara
 regex
-tomli >= 1.1.0 ; python_version < "3.11"

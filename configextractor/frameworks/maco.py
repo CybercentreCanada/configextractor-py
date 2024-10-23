@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Union
 
 from maco.extractor import Extractor as MACO_Extractor
 from maco.model import ExtractorModel
+from maco.utils import VENV_SCRIPT as MACO_VENV_SCRIPT, maco_extractor_validation
 
 from configextractor.frameworks.base import Extractor, Framework
 
@@ -26,38 +27,7 @@ class Base64Decoder(json.JSONDecoder):
 class MACO(Framework):
     def __init__(self, logger: Logger, yara_attr_name=None):
         super().__init__(logger, yara_attr_name)
-        self.venv_script = """
-import importlib
-import json
-import os
-import sys
-import yara
-
-from base64 import b64encode
-parent_package_path = "{parent_package_path}"
-sys.path.insert(1, parent_package_path)
-mod = importlib.import_module("{module_name}")
-
-class Base64Encoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, bytes):
-            return dict(__class__="bytes", data=b64encode(o).decode())
-        return json.JSONEncoder.default(self, o)
-matches = []
-if mod.{module_class}.yara_rule:
-    matches = yara.compile(source=mod.{module_class}.yara_rule).match("{sample_path}")
-result = mod.{module_class}().run(open("{sample_path}", 'rb'), matches=matches)
-
-with open("{output_path}", 'w') as fp:
-    if not result:
-        json.dump(dict(), fp)
-    else:
-        try:
-            json.dump(result.model_dump(exclude_defaults=True, exclude_none=True), fp, cls=Base64Encoder)
-        except AttributeError:
-            # venv likely has an older version of Pydantic < 2 installed
-            json.dump(result.dict(exclude_defaults=True, exclude_none=True), fp, cls=Base64Encoder)
-"""
+        self.venv_script = MACO_VENV_SCRIPT
 
     @staticmethod
     def get_classification(extractor: Extractor):
@@ -65,10 +35,7 @@ with open("{output_path}", 'w') as fp:
             return extractor.module.sharing
 
     def validate(self, module: Any) -> bool:
-        if inspect.isclass(module):
-            # 'author' has to be implemented otherwise will raise an exception according to MACO
-            return bool(issubclass(module, MACO_Extractor) and module.author)
-        return False
+        return maco_extractor_validation(module)
 
     def result_template(self, extractor: Extractor, yara_matches: List) -> Dict[str, str]:
         template = super().result_template(extractor, yara_matches)
