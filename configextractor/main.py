@@ -50,23 +50,18 @@ class ConfigExtractor:
         for parsers_dir in parsers_dirs:
             if create_venv:
                 # Recursively look for "requirements.txt" or "pyproject.toml" files and create a virtual environment
+                rpaths = []
                 for root, _, files in os.walk(parsers_dir):
-                    req_file = list({"pyproject.toml", "requirements.txt"}.intersection(set(files)))
-                    if req_file:
-                        req_file = req_file[0]
+                    req_file = list({"requirements.txt", "pyproject.toml"}.intersection(set(files)))
+                    dependencies = []
+
+                    for req_file in list({"requirements.txt", "pyproject.toml"}.intersection(set(files))):
                         rpath = os.path.join(root, req_file)
-                        venv_path = os.path.join(root, "venv")
-                        dependencies = []
-
-                        # Create a venv environment if it doesn't already exist
-                        if not os.path.exists(venv_path):
-                            logger.info(f"Creating venv at: {venv_path}")
-                            subprocess.run([python_exe, "-m", "venv", venv_path], capture_output=True)
-
+                        rpaths.append(rpath)
                         with open(rpath, "r") as f:
                             if req_file == "requirements.txt":
                                 # Parse requirements.txt file to retrieve dependencies
-                                dependencies = [d for d in f.read().splitlines() if d and not d.startswith("#")]
+                                dependencies.extend([d for d in f.read().splitlines() if d and not d.startswith("#")])
                             elif req_file == "pyproject.toml":
                                 # Parse TOML file to retrieve the dependencies
                                 # Ref: https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#dependencies-and-requirements
@@ -90,6 +85,12 @@ class ConfigExtractor:
                                             dependencies.extend(dependencies_list)
 
                         if dependencies:
+                            venv_path = os.path.join(root, "venv")
+                            # Create a venv environment if it doesn't already exist
+                            if not os.path.exists(venv_path):
+                                logger.info(f"Creating venv at: {venv_path}")
+                                subprocess.run([python_exe, "-m", "venv", venv_path], capture_output=True)
+
                             # Install/Update packages within the venv relative the dependencies extracted
                             logger.debug(f"Packages to be installed: {dependencies}")
                             p = subprocess.run(
@@ -102,8 +103,8 @@ class ConfigExtractor:
                                 if b"is being installed using the legacy" in p.stderr:
                                     # Ignore these types of errors
                                     continue
-                                logger.error(f"Error installing {rpath} into venv:\n{p.stderr.decode()}")
-                            logger.debug(f"Installed {rpath} into venv:\n{p.stdout}")
+                                logger.error(f"Error installing {rpaths} into venv:\n{p.stderr.decode()}")
+                            logger.debug(f"Installed {rpaths} into venv:\n{p.stdout}")
                         else:
                             logger.warning("No dependencies extracted from project files..")
 
