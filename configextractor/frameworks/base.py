@@ -1,8 +1,4 @@
-import json
-import os
-import subprocess
-from logging import Logger
-from tempfile import NamedTemporaryFile
+from logging import Logger, getLogger
 from typing import Any, Dict, List
 
 import plyara
@@ -10,6 +6,8 @@ import yara
 from plyara.utils import rebuild_yara_rule
 from maco import utils
 
+# Suppress logs from plyara below WARNING level
+getLogger('plyara').setLevel(level="WARNING")
 
 class Extractor:
     def __init__(self, id, framework, module, module_path, root_directory, yara_rule, venv=None) -> None:
