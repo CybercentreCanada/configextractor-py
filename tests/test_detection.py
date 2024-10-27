@@ -124,7 +124,7 @@ def test_mwcp_detection(cx):
                 "CAPEv2.modules.processing.parsers.MACO.Zloader.Zloader",
                 "CAPEv2.modules.processing.parsers.mwcp.SmokeLoader.SmokeLoader",
             ],
-            8,
+            10,
             "extractor/to_MACO",
         ),
     ],
@@ -146,3 +146,5 @@ def test_public_projects(repository_url: str, extractor_path: str, extractors: l
 
             cx = ConfigExtractor([os.path.join(working_dir, extractor_path)], create_venv=True)
             assert set(extractors) == set(cx.parsers.keys())
+    else:
+        pytest.skip("Unsupported Python version")
