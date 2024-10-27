@@ -2,7 +2,7 @@ from tempfile import NamedTemporaryFile
 
 import pytest
 
-from configextractor.frameworks import CAPE, MACO, MWCP
+from configextractor.frameworks import MACO, MWCP
 from configextractor.main import ConfigExtractor, Extractor
 
 
