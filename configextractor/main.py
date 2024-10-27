@@ -7,7 +7,6 @@ import yara
 from collections import defaultdict
 from logging import Logger, getLogger
 from maco import utils
-from sys import executable as python_exe
 from typing import Dict, List
 from urllib.parse import urlparse
 
