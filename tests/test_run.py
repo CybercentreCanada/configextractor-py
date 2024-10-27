@@ -24,19 +24,11 @@ def test_finalize_uri(cx):
 
 
 def test_venv(cx):
-    cape: Extractor = cx.parsers["venv_parsers.cape_extractor"]
-    maco: Extractor = cx.parsers["venv_parsers.maco_extractor.TestMACO"]
-    mwcp: Extractor = cx.parsers["venv_parsers.mwcp_extractor.TestMWCP"]
+    maco: Extractor = cx.parsers["venv_parsers.maco_extractor.MACO"]
+    mwcp: Extractor = cx.parsers["venv_parsers.mwcp_extractor.MWCP"]
 
     # Create a test file to run with the extractors
     with NamedTemporaryFile(delete=False) as sample:
-        # Test running CAPE extractors in venv mode
-        try:
-            CAPE(logger=None).run_in_venv(sample_path=sample.name, extractor=cape)
-        except NotImplementedError:
-            # There is currently no implementation to run CAPE extractors in venv mode
-            assert True
-
         # Test running MACO extractors in venv mode
         assert MACO(logger=None).run_in_venv(sample_path=sample.name, extractor=maco)
 
@@ -45,7 +37,6 @@ def test_venv(cx):
 
 
 def test_itty_bitty_file(cx):
-    maco: Extractor = cx.parsers["venv_parsers.maco_extractor.TestMACO"]
     file_content = b"Hello world"
 
     # Create a small test file to run with the extractor
