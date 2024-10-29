@@ -2,73 +2,6 @@ import pytest
 
 from configextractor.main import ConfigExtractor
 
-
-@pytest.fixture
-def cx():
-    yield ConfigExtractor(["tests/parsers"])
-
-
-def test_general_detection(cx):
-    # Check to see if we actually detected any of the test parsers
-    assert cx.parsers
-
-
-def test_maco_detection(cx):
-    # Ensure the subclass was detected
-    assert "parsers.maco_extractor.MACO" in cx.parsers
-    assert "parsers.maco_extractor.Extractor" not in cx.parsers
-
-
-def test_mwcp_detection(cx):
-    # Ensure the subclass was detected
-    assert "parsers.mwcp_extractor.MWCP" in cx.parsers
-    assert "parsers.mwcp_extractor.Parser" not in cx.parsers
-
-
-@pytest.mark.parametrize(
-    "repository_url, extractor_path, extractors, python_minor, branch",
-    [
-        (
-            "https://github.com/jeFF0Falltrades/rat_king_parser",
-            "rat_king_parser",
-            ["rat_king_parser.extern.maco.rkp_maco.RKPMACO"],
-            10,
-            None,
-        ),
-        (
-            "https://github.com/apophis133/apophis-YARA-Rules",
-            "apophis-YARA-Rules",
-            [
-                "apophis-YARA-Rules.scripts.maco_extractors.Pikabot_V3_C2.Pikabot",
-                "apophis-YARA-Rules.scripts.maco_extractors.TrueBot_C2.TrueBot",
-                "apophis-YARA-Rules.scripts.maco_extractors.metastealer_decrypt_strings.MetaStealer",
-            ],
-            8,
-            None,
-        ),
-    ],
-    ids=("jeFF0Falltrades/rat_king_parser", "apophis133/apophis-YARA-Rules"),
-)
-def test_public_projects(repository_url: str, extractor_path: str, extractors: list, python_minor: int, branch: str):
-    # Ensure that any changes we make doesn't break usage of public projects
-    # which can affect downstream systems using like library (ie. Assemblyline)
-    import os
-    import sys
-
-    from git import Repo
-    from tempfile import TemporaryDirectory
-
-    if sys.version_info >= (3, python_minor):
-        with TemporaryDirectory() as working_dir:
-            project_name = repository_url.rsplit("/", 1)[1]
-            Repo.clone_from(repository_url, os.path.join(working_dir, project_name), depth=1, branch=branch)
-
-            cx = ConfigExtractor([os.path.join(working_dir, extractor_path)], create_venv=True)
-            assert set(extractors) == set(cx.parsers.keys())
-    else:
-        pytest.skip("Unsupported Python version")
-
-
 CAPE_EXTRACTORS = [
     "CAPEv2.modules.processing.parsers.MACO.AgentTesla.AgentTesla",
     "CAPEv2.modules.processing.parsers.MACO.AsyncRAT.AsyncRAT",
@@ -146,30 +79,74 @@ CAPE_EXTRACTORS = [
 ]
 
 
-def test_CAPEv2():
+@pytest.fixture
+def cx():
+    yield ConfigExtractor(["tests/parsers"])
+
+
+def test_general_detection(cx):
+    # Check to see if we actually detected any of the test parsers
+    assert cx.parsers
+
+
+def test_maco_detection(cx):
+    # Ensure the subclass was detected
+    assert "parsers.maco_extractor.MACO" in cx.parsers
+    assert "parsers.maco_extractor.Extractor" not in cx.parsers
+
+
+def test_mwcp_detection(cx):
+    # Ensure the subclass was detected
+    assert "parsers.mwcp_extractor.MWCP" in cx.parsers
+    assert "parsers.mwcp_extractor.Parser" not in cx.parsers
+
+
+@pytest.mark.parametrize(
+    "repository_url, extractor_path, extractors, python_minor, branch",
+    [
+        (
+            "https://github.com/jeFF0Falltrades/rat_king_parser",
+            "rat_king_parser",
+            ["rat_king_parser.extern.maco.rkp_maco.RKPMACO"],
+            10,
+            None,
+        ),
+        (
+            "https://github.com/apophis133/apophis-YARA-Rules",
+            "apophis-YARA-Rules",
+            [
+                "apophis-YARA-Rules.scripts.maco_extractors.Pikabot_V3_C2.Pikabot",
+                "apophis-YARA-Rules.scripts.maco_extractors.TrueBot_C2.TrueBot",
+                "apophis-YARA-Rules.scripts.maco_extractors.metastealer_decrypt_strings.MetaStealer",
+            ],
+            8,
+            None,
+        ),
+        (
+            "https://github.com/kevoreilly/CAPEv2",
+            "CAPEv2",
+            CAPE_EXTRACTORS,
+            10,
+            None,
+        ),
+    ],
+    ids=("jeFF0Falltrades/rat_king_parser", "apophis133/apophis-YARA-Rules", "kevoreilly/CAPEv2"),
+)
+def test_public_projects(repository_url: str, extractor_path: str, extractors: list, python_minor: int, branch: str):
     # Ensure that any changes we make doesn't break usage of public projects
     # which can affect downstream systems using like library (ie. Assemblyline)
     import os
     import sys
-    import shutil
 
     from git import Repo
     from tempfile import TemporaryDirectory
 
-    # TODO: Update this respective of https://github.com/kevoreilly/CAPEv2/pull/2373
-    main_repository = "https://github.com/cccs-rs/CAPEv2"
-    community_repository = "https://github.com/CAPESandbox/community"
-    if sys.version_info >= (3, 10):
+    if sys.version_info >= (3, python_minor):
         with TemporaryDirectory() as working_dir:
-            main_folder = os.path.join(working_dir, "CAPEv2")
-            community_folder = os.path.join(working_dir, "community")
+            project_name = repository_url.rsplit("/", 1)[1]
+            Repo.clone_from(repository_url, os.path.join(working_dir, project_name), depth=1, branch=branch)
 
-            # Merge community extensions with main project
-            Repo.clone_from(main_repository, main_folder, depth=1, branch="extractor/to_MACO")
-            Repo.clone_from(community_repository, community_folder, depth=1)
-            shutil.copytree(community_folder, main_folder, dirs_exist_ok=True)
-
-            cx = ConfigExtractor([main_folder], create_venv=True)
-            assert set(CAPE_EXTRACTORS) == set(cx.parsers.keys())
+            cx = ConfigExtractor([os.path.join(working_dir, extractor_path)], create_venv=True)
+            assert set(extractors) == set(cx.parsers.keys())
     else:
         pytest.skip("Unsupported Python version")
