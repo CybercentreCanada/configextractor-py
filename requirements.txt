@@ -1,6 +1,6 @@
 cart
 click
-maco >= 1.1.10
+maco >= 1.1.11
 mwcfg
 mwcp
 plyara
