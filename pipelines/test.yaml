@@ -37,9 +37,9 @@ jobs:
           sudo rm -rf /tmp/* /var/lib/apt/lists/* ~/.cache/pip
 
           echo "Setup venv directory for venv mode testing with extractors"
-          python -m venv $(pwd)/tests/venv_parsers/venv
-          $(pwd)/tests/venv_parsers/venv/bin/python -m pip install -U --no-cache-dir -r $(pwd)/requirements.txt
-          $(pwd)/tests/venv_parsers/venv/bin/python -m pip list
+          python -m venv $(pwd)/tests/venv_parsers/.venv
+          $(pwd)/tests/venv_parsers/.venv/bin/python -m pip install -U --no-cache-dir -r $(pwd)/requirements.txt
+          $(pwd)/tests/venv_parsers/.venv/bin/python -m pip list
 
         displayName: Setup environment
       - script: |
