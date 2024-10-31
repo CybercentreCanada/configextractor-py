@@ -1,0 +1,3 @@
+maco >= 1.1.10
+mwcp
+yara-python

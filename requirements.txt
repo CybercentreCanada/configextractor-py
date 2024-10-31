@@ -1,7 +1,8 @@
 cart
 click
-maco >= 1.1.7
+maco >= 1.1.10
 mwcfg
 mwcp
 plyara
 regex
+setuptools

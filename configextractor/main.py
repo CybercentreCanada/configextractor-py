@@ -7,14 +7,13 @@ import yara
 from collections import defaultdict
 from logging import Logger, getLogger
 from maco import utils
-from sys import executable as python_exe
 from typing import Dict, List
 from urllib.parse import urlparse
 
-from configextractor.frameworks import CAPE, MACO, MWCP
+from configextractor.frameworks import MACO, MWCP
 from configextractor.frameworks.base import Extractor, Framework
 
-PARSER_FRAMEWORKS = [(MACO, "yara_rule"), (MWCP, "yara_rule"), (CAPE, "rule_source")]
+PARSER_FRAMEWORKS = [(MACO, "yara_rule"), (MWCP, "yara_rule")]
 
 
 class ConfigExtractor:

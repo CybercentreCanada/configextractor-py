@@ -9,12 +9,12 @@ Python Library for performing configuration extraction across multiple extractio
 The code found in this repository contains a command line interface that acts as
 a wrapper for popular malware configuration data decoders from:
 
-- Maco: https://github.com/CybercentreCanada/Maco [MIT license]
-- MWCP framework: https://github.com/Defense-Cyber-Crime-Center/DC3-MWCP [MIT license]
-- CAPE Sandbox*: https://github.com/kevoreilly/CAPEv2/ [GPL license] (many thanks to @kevoreilly for releasing so many open source parsers).
-    - Support using an old [fork](https://github.com/cccs-rs/CAPEv2) but actively working on official native support with upstream!
+- [Maco](https://github.com/CybercentreCanada/Maco) [MIT license]
+- [MWCP](https://github.com/Defense-Cyber-Crime-Center/DC3-MWCP) [MIT license]
+- [CAPE Sandbox](https://github.com/kevoreilly/CAPEv2/) via Maco wrappers [GPL license]
+  - many thanks to [@kevoreilly](https://github.com/kevoreilly) for releasing so many open source parsers.
 - ~~MWCFG : https://github.com/c3rb3ru5d3d53c/mwcfg [BSD 3-Clause License]~~
-    - [Pending support from malduck with structured output](https://github.com/CERT-Polska/malduck/pull/101)
+  - [Pending support from malduck with structured output](https://github.com/CERT-Polska/malduck/pull/101)
 
 ## Installation Guide
 

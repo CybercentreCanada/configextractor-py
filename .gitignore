@@ -2,5 +2,5 @@
 *.egg-info
 .eggs
 build/*
-tests/venv_parsers/venv
+tests/venv_parsers/.venv
 tests/venv_parsers/*_extractor.py
