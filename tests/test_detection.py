@@ -141,3 +141,10 @@ def test_public_projects(repository_url: str, extractors: list, python_minor: in
             assert set(extractors) == set(cx.parsers.keys())
     else:
         pytest.skip("Unsupported Python version")
+
+
+def test_module_conflict():
+    # Targetted directories that have the same name as an installed package didn't prevent loading extractors
+    cx = ConfigExtractor(["tests/requests"])
+    assert cx.parsers
+    assert all([id.startswith("requests") for id in cx.parsers.keys()])
