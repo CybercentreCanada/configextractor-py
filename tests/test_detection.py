@@ -144,7 +144,7 @@ def test_public_projects(repository_url: str, extractors: list, python_minor: in
 
 
 def test_module_conflict():
-    # Targetted directories that have the same name as an installed package didn't prevent loading extractors
+    # Targetted directories that have the same name as an installed package should't prevent loading extractors
     cx = ConfigExtractor(["tests/requests"])
     assert cx.parsers
     assert all([id.startswith("requests") for id in cx.parsers.keys()])
