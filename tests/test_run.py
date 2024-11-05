@@ -1,9 +1,12 @@
 from tempfile import NamedTemporaryFile
 
+import os
 import pytest
 
 from configextractor.frameworks import MACO, MWCP
 from configextractor.main import ConfigExtractor, Extractor
+
+TESTS_DIR = os.path.dirname(__file__)
 
 
 @pytest.fixture
@@ -13,7 +16,7 @@ def cx():
 
     dir = os.path.dirname(__file__)
     shutil.copytree(os.path.join(dir, "parsers"), os.path.join(dir, "venv_parsers"), dirs_exist_ok=True)
-    yield ConfigExtractor(["tests/venv_parsers"], create_venv=True)
+    yield ConfigExtractor([f"{TESTS_DIR}/venv_parsers"], create_venv=True)
 
 
 def test_finalize_uri(cx):

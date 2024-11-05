@@ -1,5 +1,6 @@
 # Main module for ConfigExtractor library
 import cart
+import os
 import regex
 import tempfile
 import yara
@@ -55,6 +56,13 @@ class ConfigExtractor:
                         rules = "\n".join(fw_class.extract_yara_from_module(member)) or None
                         if rules:
                             namespaced_yara_rules[module_id] = rules
+
+                        module_root = module_id.split(".", 1)[0]
+                        parsers_dir_name = os.path.basename(parsers_dir)
+                        if module_root != parsers_dir_name:
+                            # MACO has loaded the module from a temporary directory
+                            # Repair the ID of the extractor to be relative to the original directory
+                            module_id = module_id.replace(module_root, parsers_dir_name, 1)
 
                         self.parsers[module_id] = Extractor(
                             module_id,

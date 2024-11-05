@@ -1,87 +1,88 @@
 import pytest
+import os
 
 from configextractor.main import ConfigExtractor
 
+TESTS_DIR = os.path.dirname(__file__)
+
 CAPE_EXTRACTORS = [
-    "CAPEv2.modules.processing.parsers.MACO.AgentTesla.AgentTesla",
-    "CAPEv2.modules.processing.parsers.MACO.AsyncRAT.AsyncRAT",
-    "CAPEv2.modules.processing.parsers.MACO.AuroraStealer.AuroraStealer",
-    "CAPEv2.modules.processing.parsers.MACO.Azorult.Azorult",
-    "CAPEv2.modules.processing.parsers.MACO.BackOffLoader.BackOffLoader",
-    "CAPEv2.modules.processing.parsers.MACO.BackOffPOS.BackOffPOS",
-    "CAPEv2.modules.processing.parsers.MACO.BitPaymer.BitPaymer",
-    "CAPEv2.modules.processing.parsers.MACO.BlackDropper.BlackDropper",
-    "CAPEv2.modules.processing.parsers.MACO.BlackNix.BlackNix",
-    "CAPEv2.modules.processing.parsers.MACO.Blister.Blister",
-    "CAPEv2.modules.processing.parsers.MACO.BruteRatel.BruteRatel",
-    "CAPEv2.modules.processing.parsers.MACO.BuerLoader.BuerLoader",
-    "CAPEv2.modules.processing.parsers.MACO.BumbleBee.BumbleBee",
-    "CAPEv2.modules.processing.parsers.MACO.Carbanak.Carbanak",
-    "CAPEv2.modules.processing.parsers.MACO.ChChes.ChChes",
-    "CAPEv2.modules.processing.parsers.MACO.CobaltStrikeBeacon.CobaltStrikeBeacon",
-    "CAPEv2.modules.processing.parsers.MACO.CobaltStrikeStager.CobaltStrikeStager",
-    "CAPEv2.modules.processing.parsers.MACO.DCRat.DCRat",
-    "CAPEv2.modules.processing.parsers.MACO.DarkGate.DarkGate",
-    "CAPEv2.modules.processing.parsers.MACO.DoppelPaymer.DoppelPaymer",
-    "CAPEv2.modules.processing.parsers.MACO.DridexLoader.DridexLoader",
-    "CAPEv2.modules.processing.parsers.MACO.Emotet.Emotet",
-    "CAPEv2.modules.processing.parsers.MACO.Enfal.Enfal",
-    "CAPEv2.modules.processing.parsers.MACO.EvilGrab.EvilGrab",
-    "CAPEv2.modules.processing.parsers.MACO.Fareit.Fareit",
-    "CAPEv2.modules.processing.parsers.MACO.Formbook.Formbook",
-    "CAPEv2.modules.processing.parsers.MACO.Greame.Greame",
-    "CAPEv2.modules.processing.parsers.MACO.GuLoader.GuLoader",
-    "CAPEv2.modules.processing.parsers.MACO.Hancitor.Hancitor",
-    "CAPEv2.modules.processing.parsers.MACO.HttpBrowser.HttpBrowser",
-    "CAPEv2.modules.processing.parsers.MACO.IcedID.IcedID",
-    "CAPEv2.modules.processing.parsers.MACO.IcedIDLoader.IcedIDLoader",
-    "CAPEv2.modules.processing.parsers.MACO.KoiLoader.KoiLoader",
-    "CAPEv2.modules.processing.parsers.MACO.Latrodectus.Latrodectus",
-    "CAPEv2.modules.processing.parsers.MACO.LokiBot.LokiBot",
-    "CAPEv2.modules.processing.parsers.MACO.Lumma.Lumma",
-    "CAPEv2.modules.processing.parsers.MACO.NanoCore.NanoCore",
-    "CAPEv2.modules.processing.parsers.MACO.Nighthawk.Nighthawk",
-    "CAPEv2.modules.processing.parsers.MACO.Njrat.Njrat",
-    "CAPEv2.modules.processing.parsers.MACO.Oyster.Oyster",
-    "CAPEv2.modules.processing.parsers.MACO.Pandora.Pandora",
-    "CAPEv2.modules.processing.parsers.MACO.PhemedroneStealer.PhemedroneStealer",
-    "CAPEv2.modules.processing.parsers.MACO.PikaBot.PikaBot",
-    "CAPEv2.modules.processing.parsers.MACO.PlugX.PlugX",
-    "CAPEv2.modules.processing.parsers.MACO.PoisonIvy.PoisonIvy",
-    "CAPEv2.modules.processing.parsers.MACO.Punisher.Punisher",
-    "CAPEv2.modules.processing.parsers.MACO.QakBot.QakBot",
-    "CAPEv2.modules.processing.parsers.MACO.QuasarRAT.QuasarRAT",
-    "CAPEv2.modules.processing.parsers.MACO.Quickbind.Quickbind",
-    "CAPEv2.modules.processing.parsers.MACO.RCSession.RCSession",
-    "CAPEv2.modules.processing.parsers.MACO.REvil.REvil",
-    "CAPEv2.modules.processing.parsers.MACO.RedLeaf.RedLeaf",
-    "CAPEv2.modules.processing.parsers.MACO.RedLine.RedLine",
-    "CAPEv2.modules.processing.parsers.MACO.Remcos.Remcos",
-    "CAPEv2.modules.processing.parsers.MACO.Retefe.Retefe",
-    "CAPEv2.modules.processing.parsers.MACO.Rhadamanthys.Rhadamanthys",
-    "CAPEv2.modules.processing.parsers.MACO.Rozena.Rozena",
-    "CAPEv2.modules.processing.parsers.MACO.SmallNet.SmallNet",
-    "CAPEv2.modules.processing.parsers.MACO.SmokeLoader.SmokeLoader",
-    "CAPEv2.modules.processing.parsers.MACO.Socks5Systemz.Socks5Systemz",
-    "CAPEv2.modules.processing.parsers.MACO.SparkRAT.SparkRAT",
-    "CAPEv2.modules.processing.parsers.MACO.SquirrelWaffle.SquirrelWaffle",
-    "CAPEv2.modules.processing.parsers.MACO.Stealc.Stealc",
-    "CAPEv2.modules.processing.parsers.MACO.Strrat.Strrat",
-    "CAPEv2.modules.processing.parsers.MACO.TSCookie.TSCookie",
-    "CAPEv2.modules.processing.parsers.MACO.TrickBot.TrickBot",
-    "CAPEv2.modules.processing.parsers.MACO.UrsnifV3.UrsnifV3",
-    "CAPEv2.modules.processing.parsers.MACO.VenomRat.VenomRAT",
-    "CAPEv2.modules.processing.parsers.MACO.WarzoneRAT.WarzoneRAT",
-    "CAPEv2.modules.processing.parsers.MACO.XWorm.XWorm",
-    "CAPEv2.modules.processing.parsers.MACO.XenoRAT.XenoRAT",
-    "CAPEv2.modules.processing.parsers.MACO.Zloader.Zloader",
-    "CAPEv2.modules.processing.parsers.mwcp.SmokeLoader.SmokeLoader",
+    "community.modules.parsers.MACO.AgentTesla.AgentTesla",
+    "community.modules.parsers.MACO.AsyncRAT.AsyncRAT",
+    "community.modules.parsers.MACO.AuroraStealer.AuroraStealer",
+    "community.modules.parsers.MACO.Azorult.Azorult",
+    "community.modules.parsers.MACO.BackOffLoader.BackOffLoader",
+    "community.modules.parsers.MACO.BackOffPOS.BackOffPOS",
+    "community.modules.parsers.MACO.BitPaymer.BitPaymer",
+    "community.modules.parsers.MACO.BlackDropper.BlackDropper",
+    "community.modules.parsers.MACO.BlackNix.BlackNix",
+    "community.modules.parsers.MACO.Blister.Blister",
+    "community.modules.parsers.MACO.BruteRatel.BruteRatel",
+    "community.modules.parsers.MACO.BuerLoader.BuerLoader",
+    "community.modules.parsers.MACO.BumbleBee.BumbleBee",
+    "community.modules.parsers.MACO.Carbanak.Carbanak",
+    "community.modules.parsers.MACO.ChChes.ChChes",
+    "community.modules.parsers.MACO.CobaltStrikeBeacon.CobaltStrikeBeacon",
+    "community.modules.parsers.MACO.CobaltStrikeStager.CobaltStrikeStager",
+    "community.modules.parsers.MACO.DCRat.DCRat",
+    "community.modules.parsers.MACO.DarkGate.DarkGate",
+    "community.modules.parsers.MACO.DoppelPaymer.DoppelPaymer",
+    "community.modules.parsers.MACO.DridexLoader.DridexLoader",
+    "community.modules.parsers.MACO.Emotet.Emotet",
+    "community.modules.parsers.MACO.Enfal.Enfal",
+    "community.modules.parsers.MACO.EvilGrab.EvilGrab",
+    "community.modules.parsers.MACO.Fareit.Fareit",
+    "community.modules.parsers.MACO.Formbook.Formbook",
+    "community.modules.parsers.MACO.Greame.Greame",
+    "community.modules.parsers.MACO.GuLoader.GuLoader",
+    "community.modules.parsers.MACO.HttpBrowser.HttpBrowser",
+    "community.modules.parsers.MACO.IcedID.IcedID",
+    "community.modules.parsers.MACO.IcedIDLoader.IcedIDLoader",
+    "community.modules.parsers.MACO.KoiLoader.KoiLoader",
+    "community.modules.parsers.MACO.Latrodectus.Latrodectus",
+    "community.modules.parsers.MACO.LokiBot.LokiBot",
+    "community.modules.parsers.MACO.Lumma.Lumma",
+    "community.modules.parsers.MACO.NanoCore.NanoCore",
+    "community.modules.parsers.MACO.Nighthawk.Nighthawk",
+    "community.modules.parsers.MACO.Njrat.Njrat",
+    "community.modules.parsers.MACO.Oyster.Oyster",
+    "community.modules.parsers.MACO.Pandora.Pandora",
+    "community.modules.parsers.MACO.PhemedroneStealer.PhemedroneStealer",
+    "community.modules.parsers.MACO.PikaBot.PikaBot",
+    "community.modules.parsers.MACO.PlugX.PlugX",
+    "community.modules.parsers.MACO.PoisonIvy.PoisonIvy",
+    "community.modules.parsers.MACO.Punisher.Punisher",
+    "community.modules.parsers.MACO.QakBot.QakBot",
+    "community.modules.parsers.MACO.QuasarRAT.QuasarRAT",
+    "community.modules.parsers.MACO.Quickbind.Quickbind",
+    "community.modules.parsers.MACO.RCSession.RCSession",
+    "community.modules.parsers.MACO.REvil.REvil",
+    "community.modules.parsers.MACO.RedLeaf.RedLeaf",
+    "community.modules.parsers.MACO.RedLine.RedLine",
+    "community.modules.parsers.MACO.Remcos.Remcos",
+    "community.modules.parsers.MACO.Retefe.Retefe",
+    "community.modules.parsers.MACO.Rhadamanthys.Rhadamanthys",
+    "community.modules.parsers.MACO.Rozena.Rozena",
+    "community.modules.parsers.MACO.SmallNet.SmallNet",
+    "community.modules.parsers.MACO.SmokeLoader.SmokeLoader",
+    "community.modules.parsers.MACO.Socks5Systemz.Socks5Systemz",
+    "community.modules.parsers.MACO.SparkRAT.SparkRAT",
+    "community.modules.parsers.MACO.SquirrelWaffle.SquirrelWaffle",
+    "community.modules.parsers.MACO.Stealc.Stealc",
+    "community.modules.parsers.MACO.Strrat.Strrat",
+    "community.modules.parsers.MACO.TSCookie.TSCookie",
+    "community.modules.parsers.MACO.TrickBot.TrickBot",
+    "community.modules.parsers.MACO.UrsnifV3.UrsnifV3",
+    "community.modules.parsers.MACO.VenomRat.VenomRAT",
+    "community.modules.parsers.MACO.WarzoneRAT.WarzoneRAT",
+    "community.modules.parsers.MACO.XWorm.XWorm",
+    "community.modules.parsers.MACO.XenoRAT.XenoRAT",
+    "community.modules.parsers.MACO.Zloader.Zloader",
 ]
 
 
 @pytest.fixture
 def cx():
-    yield ConfigExtractor(["tests/parsers"])
+    yield ConfigExtractor([f"{TESTS_DIR}/parsers"])
 
 
 def test_general_detection(cx):
@@ -102,18 +103,16 @@ def test_mwcp_detection(cx):
 
 
 @pytest.mark.parametrize(
-    "repository_url, extractor_path, extractors, python_minor, branch",
+    "repository_url, extractors, python_minor, branch",
     [
         (
             "https://github.com/jeFF0Falltrades/rat_king_parser",
-            "rat_king_parser",
             ["rat_king_parser.extern.maco.rkp_maco.RKPMACO"],
             10,
             None,
         ),
         (
             "https://github.com/apophis133/apophis-YARA-Rules",
-            "apophis-YARA-Rules",
             [
                 "apophis-YARA-Rules.scripts.maco_extractors.Pikabot_V3_C2.Pikabot",
                 "apophis-YARA-Rules.scripts.maco_extractors.TrueBot_C2.TrueBot",
@@ -122,21 +121,20 @@ def test_mwcp_detection(cx):
             8,
             None,
         ),
-        (
-            "https://github.com/kevoreilly/CAPEv2",
-            "CAPEv2",
-            CAPE_EXTRACTORS,
-            10,
-            None,
-        ),
+        ("https://github.com/cccs-rs/community", CAPE_EXTRACTORS, 10, None),
     ],
-    ids=("jeFF0Falltrades/rat_king_parser", "apophis133/apophis-YARA-Rules", "kevoreilly/CAPEv2"),
+    ids=("jeFF0Falltrades/rat_king_parser", "apophis133/apophis-YARA-Rules", "CAPESandbox/community"),
 )
-def test_public_projects(repository_url: str, extractor_path: str, extractors: list, python_minor: int, branch: str):
+def test_public_projects(repository_url: str, extractors: list, python_minor: int, branch: str):
     # Ensure that any changes we make doesn't break usage of public projects
     # which can affect downstream systems using like library (ie. Assemblyline)
     import os
     import sys
+
+    # Remove local 'git' module from being loaded
+    print(sys.path)
+    sys.path.pop(0)
+    sys.modules.pop("git", None)
 
     from git import Repo
     from tempfile import TemporaryDirectory
@@ -144,9 +142,41 @@ def test_public_projects(repository_url: str, extractor_path: str, extractors: l
     if sys.version_info >= (3, python_minor):
         with TemporaryDirectory() as working_dir:
             project_name = repository_url.rsplit("/", 1)[1]
-            Repo.clone_from(repository_url, os.path.join(working_dir, project_name), depth=1, branch=branch)
+            extractor_dir = os.path.join(working_dir, project_name)
+            Repo.clone_from(repository_url, extractor_dir, depth=1, branch=branch)
 
-            cx = ConfigExtractor([os.path.join(working_dir, extractor_path)], create_venv=True)
+            cx = ConfigExtractor([extractor_dir], create_venv=True)
             assert set(extractors) == set(cx.parsers.keys())
     else:
         pytest.skip("Unsupported Python version")
+
+
+def test_module_conflict():
+    import sys
+    from tempfile import TemporaryDirectory
+    import shutil
+
+    # Import the actual git package and not the local directory for this test
+    if TESTS_DIR in sys.path:
+        sys.path.remove(TESTS_DIR)
+    sys.modules.pop("git", None)
+    import git
+
+    # Targetted directories that have the same name as an installed package should't prevent loading extractors
+    ex_dir = f"{TESTS_DIR}/git"
+    cx = ConfigExtractor([ex_dir])
+    assert cx.parsers
+    assert all([id.startswith("git") for id in cx.parsers.keys()])
+
+    run_1 = cx.parsers
+
+    # Loading the same extractor directory twice from different parent directories should yield the same results
+    # (ie. caching from the Python interpreter shouldn't get in the way and cause the library to think it's an installed package with the same name and mess around with the scripts paths and module names)
+    with TemporaryDirectory() as ex_copy:
+        copy_ex_dir = f"{ex_copy}/git"
+        shutil.copytree(ex_dir, copy_ex_dir, dirs_exist_ok=True)
+        cx = ConfigExtractor([copy_ex_dir])
+        assert cx.parsers and set(cx.parsers.keys()) == set(run_1.keys())
+
+        # Assert no phantom paths were created in either run
+        assert [os.path.exists(extractor.module_path) for extractor in list(cx.parsers.values()) + list(run_1.values())]
