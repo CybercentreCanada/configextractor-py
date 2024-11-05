@@ -156,6 +156,12 @@ def test_module_conflict():
     from tempfile import TemporaryDirectory
     import shutil
 
+    # Import the actual git package and not the local directory for this test
+    if TESTS_DIR in sys.path:
+        sys.path.remove(TESTS_DIR)
+    sys.modules.pop("git", None)
+    import git
+
     # Targetted directories that have the same name as an installed package should't prevent loading extractors
     ex_dir = f"{TESTS_DIR}/git"
     cx = ConfigExtractor([ex_dir])
@@ -166,7 +172,6 @@ def test_module_conflict():
 
     # Loading the same extractor directory twice from different parent directories should yield the same results
     # (ie. caching from the Python interpreter shouldn't get in the way and cause the library to think it's an installed package with the same name and mess around with the scripts paths and module names)
-    sys.path.remove(TESTS_DIR)
     with TemporaryDirectory() as ex_copy:
         copy_ex_dir = f"{ex_copy}/git"
         shutil.copytree(ex_dir, copy_ex_dir, dirs_exist_ok=True)
