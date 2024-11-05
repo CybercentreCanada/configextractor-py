@@ -121,7 +121,7 @@ def test_mwcp_detection(cx):
             8,
             None,
         ),
-        ("https://github.com/cccs-rs/community", CAPE_EXTRACTORS, 10, None),
+        ("https://github.com/CAPESandbox/community", CAPE_EXTRACTORS, 10, None),
     ],
     ids=("jeFF0Falltrades/rat_king_parser", "apophis133/apophis-YARA-Rules", "CAPESandbox/community"),
 )
