@@ -152,7 +152,26 @@ def test_public_projects(repository_url: str, extractors: list, python_minor: in
 
 
 def test_module_conflict():
+    import sys
+    from tempfile import TemporaryDirectory
+    import shutil
+
     # Targetted directories that have the same name as an installed package should't prevent loading extractors
-    cx = ConfigExtractor([f"{TESTS_DIR}/git"])
+    ex_dir = f"{TESTS_DIR}/git"
+    cx = ConfigExtractor([ex_dir])
     assert cx.parsers
     assert all([id.startswith("git") for id in cx.parsers.keys()])
+
+    run_1 = cx.parsers
+
+    # Loading the same extractor directory twice from different parent directories should yield the same results
+    # (ie. caching from the Python interpreter shouldn't get in the way and cause the library to think it's an installed package with the same name and mess around with the scripts paths and module names)
+    sys.path.remove(TESTS_DIR)
+    with TemporaryDirectory() as ex_copy:
+        copy_ex_dir = f"{ex_copy}/git"
+        shutil.copytree(ex_dir, copy_ex_dir, dirs_exist_ok=True)
+        cx = ConfigExtractor([copy_ex_dir])
+        assert cx.parsers and set(cx.parsers.keys()) == set(run_1.keys())
+
+        # Assert no phantom paths were created in either run
+        assert [os.path.exists(extractor.module_path) for extractor in list(cx.parsers.values()) + list(run_1.values())]
