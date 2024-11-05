@@ -42,17 +42,16 @@ class ConfigExtractor:
 
             def extractor_module_callback(member, module, venv):
                 # Check to see if we're blocking this potential extractor
-                if block_regex and block_regex.match(member.__name__):
+                module_id = module.__name__
+                if member.__name__ != module.__name__:
+                    # Account for the possibility of multiple extractor classes within the same module
+                    module_id = f"{module.__name__}.{member.__name__}"
+
+                if block_regex and block_regex.match(module_id):
                     return
 
                 for fw_name, fw_class in self.FRAMEWORK_LIBRARY_MAPPING.items():
                     if fw_class.validate(member):
-                        # Positively identified extractor that belongs to supported framework
-                        module_id = module.__name__
-                        if member.__name__ != module.__name__:
-                            # Account for the possibility of multiple extractor classes within the same module
-                            module_id = f"{module.__name__}.{member.__name__}"
-
                         rules = "\n".join(fw_class.extract_yara_from_module(member)) or None
                         if rules:
                             namespaced_yara_rules[module_id] = rules

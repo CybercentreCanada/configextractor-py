@@ -1,10 +1,7 @@
-import inspect
 import json
-from base64 import b64decode
 from logging import Logger
 from typing import Any, Dict, List, Union
 
-from maco.extractor import Extractor as MACO_Extractor
 from maco.model import ExtractorModel
 from maco.utils import VENV_SCRIPT as MACO_VENV_SCRIPT, maco_extractor_validation, Base64Decoder
 
