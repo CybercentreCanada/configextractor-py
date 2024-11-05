@@ -57,7 +57,7 @@ class ConfigExtractor:
                         if rules:
                             namespaced_yara_rules[module_id] = rules
 
-                        module_root = module_id.split('.', 1)[0]
+                        module_root = module_id.split(".", 1)[0]
                         parsers_dir_name = os.path.basename(parsers_dir)
                         if module_root != parsers_dir_name:
                             # MACO has loaded the module from a temporary directory

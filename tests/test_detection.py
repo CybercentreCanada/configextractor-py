@@ -1,6 +1,9 @@
 import pytest
+import os
 
 from configextractor.main import ConfigExtractor
+
+TESTS_DIR = os.path.dirname(__file__)
 
 CAPE_EXTRACTORS = [
     "community.modules.parsers.MACO.AgentTesla.AgentTesla",
@@ -79,7 +82,7 @@ CAPE_EXTRACTORS = [
 
 @pytest.fixture
 def cx():
-    yield ConfigExtractor(["tests/parsers"])
+    yield ConfigExtractor([f"{TESTS_DIR}/parsers"])
 
 
 def test_general_detection(cx):
@@ -128,6 +131,11 @@ def test_public_projects(repository_url: str, extractors: list, python_minor: in
     import os
     import sys
 
+    # Remove local 'git' module from being loaded
+    print(sys.path)
+    sys.path.pop(0)
+    sys.modules.pop("git", None)
+
     from git import Repo
     from tempfile import TemporaryDirectory
 
@@ -145,6 +153,6 @@ def test_public_projects(repository_url: str, extractors: list, python_minor: in
 
 def test_module_conflict():
     # Targetted directories that have the same name as an installed package should't prevent loading extractors
-    cx = ConfigExtractor(["tests/requests"])
+    cx = ConfigExtractor([f"{TESTS_DIR}/git"])
     assert cx.parsers
-    assert all([id.startswith("requests") for id in cx.parsers.keys()])
+    assert all([id.startswith("git") for id in cx.parsers.keys()])
