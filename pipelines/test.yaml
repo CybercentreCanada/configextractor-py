@@ -30,14 +30,10 @@ jobs:
           versionSpec: "$(python.version)"
       - script: |
           [ ! -d "$(pwd)/tests" ] && echo "No tests found" && exit
-          [ -f $(pwd)/requirements.txt ] && sudo env "PATH=$PATH" python -m pip install -U --no-cache-dir -r $(pwd)/requirements.txt
-          [ -f $(pwd)/tests/requirements.txt ] && sudo env "PATH=$PATH" python -m pip install -U --no-cache-dir -r $(pwd)/tests/requirements.txt
+          pip install uv
+          [ -f $(pwd)/requirements.txt ] && sudo env "PATH=$PATH" uv pip install --system -U --no-cache-dir -r $(pwd)/requirements.txt
+          [ -f $(pwd)/tests/requirements.txt ] && sudo env "PATH=$PATH" uv pip install --system -U --no-cache-dir -r $(pwd)/tests/requirements.txt
           sudo rm -rf /tmp/* /var/lib/apt/lists/* ~/.cache/pip
-
-          echo "Setup venv directory for venv mode testing with extractors"
-          python -m venv $(pwd)/tests/venv_parsers/.venv
-          $(pwd)/tests/venv_parsers/.venv/bin/python -m pip install -U --no-cache-dir -r $(pwd)/requirements.txt
-          $(pwd)/tests/venv_parsers/.venv/bin/python -m pip list
 
         displayName: Setup environment
       - script: |

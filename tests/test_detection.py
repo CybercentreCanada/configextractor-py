@@ -115,11 +115,6 @@ def test_public_projects(repository_url: str, extractors: list, python_minor: in
     import os
     import sys
 
-    # Remove local 'git' module from being loaded
-    print(sys.path)
-    sys.path.pop(0)
-    sys.modules.pop("git", None)
-
     from git import Repo
     from tempfile import TemporaryDirectory
 
