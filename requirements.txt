@@ -3,6 +3,4 @@ click
 maco >= 1.1.14
 mwcfg
 mwcp
-plyara
-regex
 setuptools

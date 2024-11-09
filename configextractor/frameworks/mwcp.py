@@ -2,10 +2,10 @@
 
 import inspect
 from logging import Logger
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import mwcp
-import regex
+import re as regex
 from maco.model import ConnUsageEnum, Encryption, ExtractorModel
 from mwcp import Parser
 
@@ -15,6 +15,21 @@ IP_REGEX_ONLY = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2
 
 CONN_USAGE = [k.name for k in ConnUsageEnum]
 ENC_USAGE = [k.name for k in Encryption.UsageEnum]
+
+MWCP_YARA_RULE = """
+rule MWCP {
+    meta:
+        desc = "Used to match on Python files that contain MWCP extractors"
+    strings:
+        $from = "from mwcp"
+        $import = "import mwcp"
+        $extractor = "Parser"
+        $class = /class \w+\(([a-zA-Z.]+)?Parser\)\:/
+        $desc = "DESCRIPTION"
+    condition:
+        ($from or $import) and $extractor and $class and $desc
+}
+"""
 
 
 def convert_to_MACO(metadata: list) -> dict:
@@ -184,8 +199,8 @@ def convert_to_MACO(metadata: list) -> dict:
 
 
 class MWCP(Framework):
-    def __init__(self, logger: Logger, yara_attr_name=None):
-        super().__init__(logger, yara_attr_name)
+    def __init__(self, logger: Logger):
+        super().__init__(logger, "yara_rule")
         self.venv_script = """
 import importlib
 import os
@@ -201,11 +216,12 @@ result = mwcp.run(mod.{module_class}, data=open("{sample_path}", "rb").read())
 with open("{output_path}", 'w') as fp:
     json.dump(result.as_json_dict(), fp)
 """
+        self.yara_rule = MWCP_YARA_RULE
 
-    def validate(self, parser):
-        if inspect.isclass(parser):
+    def validate(self, module: Any) -> bool:
+        if inspect.isclass(module):
             # 'DESCRIPTION' has to be implemented otherwise will raise an exception according to MWCP
-            return issubclass(parser, Parser) and parser.DESCRIPTION
+            return hasattr(module, "DESCRIPTION") and module.DESCRIPTION
 
     def result_template(self, extractor: Extractor, yara_matches: List) -> Dict[str, str]:
         template = super().result_template(extractor, yara_matches)

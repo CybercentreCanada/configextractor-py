@@ -1,13 +1,8 @@
-from logging import Logger, getLogger
+from logging import Logger
 from typing import Any, Dict, List
 
-import plyara
-import yara
-from plyara.utils import rebuild_yara_rule
-from maco import utils
+from maco import utils, yara
 
-# Suppress logs from plyara below WARNING level
-getLogger('plyara').setLevel(level="WARNING")
 
 class Extractor:
     def __init__(self, id, framework, module, module_path, root_directory, yara_rule, venv=None) -> None:
@@ -25,6 +20,7 @@ class Framework:
         self.log = logger
         self.yara_attr_name = yara_attr_name
         self.venv_script = ""
+        self.yara_rule = ""
 
     @staticmethod
     # Get classification of module
@@ -42,14 +38,9 @@ class Framework:
 
     # Extract YARA rules from module
     def extract_yara_from_module(self, decoder: object) -> List[str]:
-        if self.yara_attr_name and hasattr(decoder, self.yara_attr_name) and getattr(decoder, self.yara_attr_name):
-            yara_parser = plyara.Plyara()
-            yara_parser.STRING_ESCAPE_CHARS.add("r")
-            return [
-                rebuild_yara_rule(yara_rule_frag)
-                for yara_rule_frag in yara_parser.parse_string(getattr(decoder, self.yara_attr_name))
-            ]
-        return []
+        if self.yara_attr_name and hasattr(decoder, self.yara_attr_name):
+            # YARA rule found
+            return getattr(decoder, self.yara_attr_name)
 
     # Validate module against framework
     def validate(self, module: Any) -> bool:

@@ -80,31 +80,10 @@ CAPE_EXTRACTORS = [
 ]
 
 
-@pytest.fixture
-def cx():
-    yield ConfigExtractor([f"{TESTS_DIR}/parsers"])
-
-
-def test_general_detection(cx):
-    # Check to see if we actually detected any of the test parsers
-    assert cx.parsers
-
-
-def test_maco_detection(cx):
-    # Ensure the subclass was detected
-    assert "parsers.maco_extractor.MACO" in cx.parsers
-    assert "parsers.maco_extractor.Extractor" not in cx.parsers
-
-
-def test_mwcp_detection(cx):
-    # Ensure the subclass was detected
-    assert "parsers.mwcp_extractor.MWCP" in cx.parsers
-    assert "parsers.mwcp_extractor.Parser" not in cx.parsers
-
-
 @pytest.mark.parametrize(
     "repository_url, extractors, python_minor, branch",
     [
+        (f"file://{TESTS_DIR}/parsers", ["parsers.maco_extractor.MACO", "parsers.mwcp_extractor.MWCP"], 8, None),
         (
             "https://github.com/jeFF0Falltrades/rat_king_parser",
             ["rat_king_parser.extern.maco.rkp_maco.RKPMACO"],
@@ -123,7 +102,12 @@ def test_mwcp_detection(cx):
         ),
         ("https://github.com/CAPESandbox/community", CAPE_EXTRACTORS, 10, None),
     ],
-    ids=("jeFF0Falltrades/rat_king_parser", "apophis133/apophis-YARA-Rules", "CAPESandbox/community"),
+    ids=(
+        "configextractor-py/test_extractors",
+        "jeFF0Falltrades/rat_king_parser",
+        "apophis133/apophis-YARA-Rules",
+        "CAPESandbox/community",
+    ),
 )
 def test_public_projects(repository_url: str, extractors: list, python_minor: int, branch: str):
     # Ensure that any changes we make doesn't break usage of public projects
@@ -141,9 +125,13 @@ def test_public_projects(repository_url: str, extractors: list, python_minor: in
 
     if sys.version_info >= (3, python_minor):
         with TemporaryDirectory() as working_dir:
-            project_name = repository_url.rsplit("/", 1)[1]
-            extractor_dir = os.path.join(working_dir, project_name)
-            Repo.clone_from(repository_url, extractor_dir, depth=1, branch=branch)
+            if repository_url.startswith("file://"):
+                # Local directory testing
+                extractor_dir = repository_url[7:]
+            else:
+                project_name = repository_url.rsplit("/", 1)[1]
+                extractor_dir = os.path.join(working_dir, project_name)
+                Repo.clone_from(repository_url, extractor_dir, depth=1, branch=branch)
 
             cx = ConfigExtractor([extractor_dir], create_venv=True)
             assert set(extractors) == set(cx.parsers.keys())
@@ -152,31 +140,29 @@ def test_public_projects(repository_url: str, extractors: list, python_minor: in
 
 
 def test_module_conflict():
-    import sys
     from tempfile import TemporaryDirectory
     import shutil
-
-    # Import the actual git package and not the local directory for this test
-    if TESTS_DIR in sys.path:
-        sys.path.remove(TESTS_DIR)
-    sys.modules.pop("git", None)
     import git
 
-    # Targetted directories that have the same name as an installed package should't prevent loading extractors
-    ex_dir = f"{TESTS_DIR}/git"
-    cx = ConfigExtractor([ex_dir])
-    assert cx.parsers
-    assert all([id.startswith("git") for id in cx.parsers.keys()])
+    # This test covers 2 scenarios:
+    # 1) Targetted directories that have the same name as an installed package should't prevent loading extractors
+    # 2) Loading the same extractor directory twice from different parent directories should yield the same results
 
-    run_1 = cx.parsers
+    previous_run = None
+    for _ in range(2):
+        with TemporaryDirectory() as ex_copy:
+            copy_ex_dir = f"{ex_copy}/git"
+            shutil.copytree(f"{TESTS_DIR}/parsers", copy_ex_dir, dirs_exist_ok=True)
+            cx = ConfigExtractor([copy_ex_dir])
+            assert cx.parsers
 
-    # Loading the same extractor directory twice from different parent directories should yield the same results
-    # (ie. caching from the Python interpreter shouldn't get in the way and cause the library to think it's an installed package with the same name and mess around with the scripts paths and module names)
-    with TemporaryDirectory() as ex_copy:
-        copy_ex_dir = f"{ex_copy}/git"
-        shutil.copytree(ex_dir, copy_ex_dir, dirs_exist_ok=True)
-        cx = ConfigExtractor([copy_ex_dir])
-        assert cx.parsers and set(cx.parsers.keys()) == set(run_1.keys())
+            if previous_run:
+                assert set(cx.parsers.keys()) == set(previous_run.keys())
 
-        # Assert no phantom paths were created in either run
-        assert [os.path.exists(extractor.module_path) for extractor in list(cx.parsers.values()) + list(run_1.values())]
+                # Assert no phantom paths were created in either run
+                assert [
+                    os.path.exists(extractor.module_path)
+                    for extractor in list(cx.parsers.values()) + list(previous_run.values())
+                ]
+            else:
+                previous_run = cx.parsers
