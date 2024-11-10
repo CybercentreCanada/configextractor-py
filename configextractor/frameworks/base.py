@@ -37,7 +37,7 @@ class Framework:
         return dict(id=extractor.id, yara_hits=[y.rule for y in yara_matches])
 
     # Extract YARA rules from module
-    def extract_yara_from_module(self, decoder: object) -> List[str]:
+    def extract_yara_from_module(self, decoder: object) -> str:
         if self.yara_attr_name and hasattr(decoder, self.yara_attr_name):
             # YARA rule found
             return getattr(decoder, self.yara_attr_name)

@@ -91,6 +91,8 @@ class ConfigExtractor:
             "framework": extractor.framework,
             "classification": fw_cls.__class__.get_classification(extractor),
             "name": fw_cls.__class__.get_name(extractor),
+            "path": extractor.module_path,
+            "id": extractor.id,
         }
 
     def finalize(self, results: List[dict]):
