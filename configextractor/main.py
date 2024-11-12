@@ -66,7 +66,6 @@ class ConfigExtractor:
                             rules,
                             venv,
                         )
-                        return True
 
             utils.import_extractors(parsers_dir, scanner, extractor_module_callback, logger, create_venv)
 
