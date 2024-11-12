@@ -1,6 +1,6 @@
 cart
 click
-maco >= 1.1.14
+maco >= 1.2.0
 mwcfg
 mwcp
 setuptools
