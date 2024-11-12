@@ -1,20 +1,17 @@
 # Main module for ConfigExtractor library
 import cart
-import os
-import regex
+import inspect
+import re as regex
 import tempfile
-import yara
 
 from collections import defaultdict
 from logging import Logger, getLogger
-from maco import utils
+from maco import utils, yara
 from typing import Dict, List
 from urllib.parse import urlparse
 
 from configextractor.frameworks import MACO, MWCP
 from configextractor.frameworks.base import Extractor, Framework
-
-PARSER_FRAMEWORKS = [(MACO, "yara_rule"), (MWCP, "yara_rule")]
 
 
 class ConfigExtractor:
@@ -24,45 +21,47 @@ class ConfigExtractor:
         logger: Logger = None,
         parser_blocklist: List[str] = [],
         create_venv: bool = False,
+        framework_classes: List[Framework] = [MACO, MWCP],
     ) -> None:
         if not logger:
             logger = getLogger()
         self.log = logger
         self.FRAMEWORK_LIBRARY_MAPPING: Dict[str, Framework] = {
-            fw_cls.__name__: fw_cls(self.log, yara_attr) for fw_cls, yara_attr in PARSER_FRAMEWORKS
+            fw_cls.__name__: fw_cls(self.log) for fw_cls in framework_classes
         }
 
         self.parsers: Dict[str, Extractor] = dict()
         namespaced_yara_rules: Dict[str, List[str]] = dict()
         block_regex = regex.compile("|".join(parser_blocklist)) if parser_blocklist else None
+        scanner = yara.compile("\n".join([fw_class.yara_rule for fw_class in self.FRAMEWORK_LIBRARY_MAPPING.values()]))
         for parsers_dir in parsers_dirs:
-            if create_venv:
-                # Recursively create/update virtual environments
-                utils.create_venv(parsers_dir, logger=self.log)
 
-            def extractor_module_callback(member, module, venv):
+            def extractor_module_callback(module, venv):
                 # Check to see if we're blocking this potential extractor
-                if block_regex and block_regex.match(member.__name__):
-                    return
-
                 for fw_name, fw_class in self.FRAMEWORK_LIBRARY_MAPPING.items():
-                    if fw_class.validate(member):
-                        # Positively identified extractor that belongs to supported framework
+                    members = inspect.getmembers(module, predicate=fw_class.validate)
+                    for _, member in members:
                         module_id = module.__name__
                         if member.__name__ != module.__name__:
                             # Account for the possibility of multiple extractor classes within the same module
                             module_id = f"{module.__name__}.{member.__name__}"
 
-                        rules = "\n".join(fw_class.extract_yara_from_module(member)) or None
+                        class_name = module_id.rsplit(".", 1)[1]
+                        with open(module.__file__, "r") as fp:
+                            if f"class {class_name}" not in fp.read():
+                                # Class found is not in this file
+                                continue
+
+                        if module_id.startswith("src."):
+                            # Cleanup `src` from module_id
+                            module_id = module_id[4:]
+
+                        if block_regex and block_regex.match(module_id):
+                            return
+
+                        rules = fw_class.extract_yara_from_module(member)
                         if rules:
                             namespaced_yara_rules[module_id] = rules
-
-                        module_root = module_id.split(".", 1)[0]
-                        parsers_dir_name = os.path.basename(parsers_dir)
-                        if module_root != parsers_dir_name:
-                            # MACO has loaded the module from a temporary directory
-                            # Repair the ID of the extractor to be relative to the original directory
-                            module_id = module_id.replace(module_root, parsers_dir_name, 1)
 
                         self.parsers[module_id] = Extractor(
                             module_id,
@@ -73,16 +72,11 @@ class ConfigExtractor:
                             rules,
                             venv,
                         )
-                        return True
 
-            utils.find_extractors(
-                parsers_dir,
-                logger=self.log,
-                extractor_module_callback=extractor_module_callback,
-            )
+            utils.import_extractors(parsers_dir, scanner, extractor_module_callback, logger, create_venv)
 
         self.yara = yara.compile(sources={ns: rules for ns, rules in namespaced_yara_rules.items()})
-        for fw_name in list(self.FRAMEWORK_LIBRARY_MAPPING.keys()):
+        for fw_name in self.FRAMEWORK_LIBRARY_MAPPING:
             self.log.debug(
                 f"# of YARA-dependent parsers under {fw_name}: "
                 f"{len([p for p in self.parsers.values() if p.rule and p.framework == fw_name])}"
@@ -102,6 +96,8 @@ class ConfigExtractor:
             "framework": extractor.framework,
             "classification": fw_cls.__class__.get_classification(extractor),
             "name": fw_cls.__class__.get_name(extractor),
+            "path": extractor.module_path,
+            "id": extractor.id,
         }
 
     def finalize(self, results: List[dict]):

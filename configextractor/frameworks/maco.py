@@ -1,20 +1,18 @@
-import inspect
 import json
-from base64 import b64decode
 from logging import Logger
 from typing import Any, Dict, List, Union
 
-from maco.extractor import Extractor as MACO_Extractor
 from maco.model import ExtractorModel
-from maco.utils import VENV_SCRIPT as MACO_VENV_SCRIPT, maco_extractor_validation, Base64Decoder
+from maco.utils import VENV_SCRIPT as MACO_VENV_SCRIPT, maco_extractor_validation, Base64Decoder, MACO_YARA_RULE
 
 from configextractor.frameworks.base import Extractor, Framework
 
 
 class MACO(Framework):
-    def __init__(self, logger: Logger, yara_attr_name=None):
-        super().__init__(logger, yara_attr_name)
+    def __init__(self, logger: Logger):
+        super().__init__(logger, "yara_rule")
         self.venv_script = MACO_VENV_SCRIPT
+        self.yara_rule = MACO_YARA_RULE
 
     @staticmethod
     def get_classification(extractor: Extractor):
