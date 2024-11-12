@@ -24,11 +24,10 @@ class MACO(Framework):
 
     def result_template(self, extractor: Extractor, yara_matches: List) -> Dict[str, str]:
         template = super().result_template(extractor, yara_matches)
-        decoder = extractor.module()
         template.update(
             {
-                "author": decoder.author,
-                "description": decoder.__doc__,
+                "author": extractor.module.author,
+                "description": extractor.module.__doc__,
             }
         )
         return template
@@ -37,7 +36,6 @@ class MACO(Framework):
         results = list()
         for extractor, yara_matches in parsers.items():
             try:
-                decoder = extractor.module()
                 result = self.result_template(extractor, yara_matches)
 
                 # Run MaCo parser with YARA matches
@@ -46,7 +44,8 @@ class MACO(Framework):
                     # Run in special mode using the virtual environment detected
                     r = self.run_in_venv(sample_path, extractor)
                 else:
-                    r = decoder.run(open(sample_path, "rb"), matches=yara_matches)
+                    with open(sample_path, "rb") as f:
+                        r = extractor.module().run(f, matches=yara_matches)
 
                 if not (r or yara_matches):
                     # Nothing to report

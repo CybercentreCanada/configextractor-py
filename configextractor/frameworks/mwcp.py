@@ -246,7 +246,8 @@ with open("{output_path}", 'w') as fp:
                     r = self.run_in_venv(sample_path, parser)
                 else:
                     # Just run MWCP parsers directly, using the filename to fetch the class attribute from module
-                    r = mwcp.run(parser.module, data=open(sample_path, "rb").read()).as_json_dict()
+                    with open(sample_path, "rb") as f:
+                        r = mwcp.run(parser.module, data=f.read()).as_json_dict()
 
                 # Log any errors raised during execution
                 [self.log.error(e) for e in r["errors"]]
