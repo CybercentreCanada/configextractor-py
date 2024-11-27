@@ -3,34 +3,20 @@ from logging import Logger
 from typing import Any, Dict, List, Union
 
 from maco.model import ExtractorModel
-from maco.utils import VENV_SCRIPT as MACO_VENV_SCRIPT, maco_extractor_validation, Base64Decoder, MACO_YARA_RULE
+from maco.utils import MACO_YARA_RULE, Base64Decoder, maco_extractor_validation
+from maco.utils import VENV_SCRIPT as MACO_VENV_SCRIPT
 
 from configextractor.frameworks.base import Extractor, Framework
 
 
 class MACO(Framework):
     def __init__(self, logger: Logger):
-        super().__init__(logger, "yara_rule")
+        super().__init__(logger, "author", "__doc__", "sharing", "yara_rule")
         self.venv_script = MACO_VENV_SCRIPT
         self.yara_rule = MACO_YARA_RULE
 
-    @staticmethod
-    def get_classification(extractor: Extractor):
-        if hasattr(extractor.module, "sharing"):
-            return extractor.module.sharing
-
     def validate(self, module: Any) -> bool:
         return maco_extractor_validation(module)
-
-    def result_template(self, extractor: Extractor, yara_matches: List) -> Dict[str, str]:
-        template = super().result_template(extractor, yara_matches)
-        template.update(
-            {
-                "author": extractor.module.author,
-                "description": extractor.module.__doc__,
-            }
-        )
-        return template
 
     def run(self, sample_path: str, parsers: Dict[Extractor, List[str]]) -> List[dict]:
         results = list()
@@ -39,13 +25,7 @@ class MACO(Framework):
                 result = self.result_template(extractor, yara_matches)
 
                 # Run MaCo parser with YARA matches
-                r: ExtractorModel = None
-                if extractor.venv:
-                    # Run in special mode using the virtual environment detected
-                    r = self.run_in_venv(sample_path, extractor)
-                else:
-                    with open(sample_path, "rb") as f:
-                        r = extractor.module().run(f, matches=yara_matches)
+                r: ExtractorModel = self.run_in_venv(sample_path, extractor)
 
                 if not (r or yara_matches):
                     # Nothing to report
