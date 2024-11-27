@@ -1,14 +1,15 @@
 # Main module for ConfigExtractor library
-import cart
 import inspect
 import re as regex
 import tempfile
-
 from collections import defaultdict
 from logging import Logger, getLogger
-from maco import utils, yara
+from multiprocessing import Manager, Process
 from typing import Dict, List
 from urllib.parse import urlparse
+
+import cart
+from maco import utils, yara
 
 from configextractor.frameworks import MACO, MWCP
 from configextractor.frameworks.base import Extractor, Framework
@@ -31,10 +32,10 @@ class ConfigExtractor:
         }
 
         self.parsers: Dict[str, Extractor] = dict()
-        namespaced_yara_rules: Dict[str, List[str]] = dict()
         block_regex = regex.compile("|".join(parser_blocklist)) if parser_blocklist else None
         scanner = yara.compile("\n".join([fw_class.yara_rule for fw_class in self.FRAMEWORK_LIBRARY_MAPPING.values()]))
-        for parsers_dir in parsers_dirs:
+        with Manager() as manager:
+            parsers = manager.dict()
 
             def extractor_module_callback(module, venv):
                 # Check to see if we're blocking this potential extractor
@@ -59,23 +60,33 @@ class ConfigExtractor:
                         if block_regex and block_regex.match(module_id):
                             return
 
-                        rules = fw_class.extract_yara_from_module(member)
-                        if rules:
-                            namespaced_yara_rules[module_id] = rules
-
-                        self.parsers[module_id] = Extractor(
-                            module_id,
-                            fw_name,
-                            member,
-                            module.__file__,
-                            parsers_dir,
-                            rules,
-                            venv,
+                        parsers[module_id] = dict(
+                            id=module_id,
+                            framework=fw_name,
+                            module_path=module.__file__,
+                            venv=venv,
+                            **fw_class.extract_metadata_from_module(member),
                         )
 
-            utils.import_extractors(parsers_dir, scanner, extractor_module_callback, logger, create_venv)
+            # Launch importing extractors as separate processes
+            processes = []
+            for parsers_dir in parsers_dirs:
+                p = Process(
+                    target=utils.import_extractors,
+                    args=(parsers_dir, scanner, extractor_module_callback, logger, create_venv),
+                )
+                processes.append(p)
+                p.start()
 
-        self.yara = yara.compile(sources={ns: rules for ns, rules in namespaced_yara_rules.items()})
+            # Wait for all the processes to terminate
+            for p in processes:
+                p.join()
+
+            self.parsers = {id: Extractor(**extractor_kwargs) for id, extractor_kwargs in dict(parsers).items()}
+
+        self.yara = yara.compile(
+            sources={name: extractor.rule for name, extractor in self.parsers.items() if extractor.rule}
+        )
         for fw_name in self.FRAMEWORK_LIBRARY_MAPPING:
             self.log.debug(
                 f"# of YARA-dependent parsers under {fw_name}: "
@@ -141,16 +152,16 @@ class ConfigExtractor:
             for yara_match in self.yara.match(sample_copy.name):
                 # Retrieve relevant parser information
                 extractor = self.parsers[yara_match.namespace]
-                if block_regex and block_regex.match(extractor.module.__name__):
-                    self.log.info(f"Blocking {extractor.module.__name__} based on passed blocklist regex list")
+                if block_regex and block_regex.match(extractor.id):
+                    self.log.info(f"Blocking {extractor.id} based on passed blocklist regex list")
                     continue
                 # Pass in yara.Match objects since some framework can leverage it
                 parsers_to_run[extractor.framework][extractor].append(yara_match)
 
             # Add standalone parsers that should run on any file
             for parser in [p for p in self.parsers.values() if not p.rule]:
-                if block_regex and block_regex.match(parser.module.__name__):
-                    self.log.info(f"Blocking {parser.module.__name__} based on passed blocklist regex list")
+                if block_regex and block_regex.match(parser.id):
+                    self.log.info(f"Blocking {parser.id} based on passed blocklist regex list")
                     continue
                 parsers_to_run[parser.framework][parser].extend([])
 

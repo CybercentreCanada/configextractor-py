@@ -1,15 +1,14 @@
 # MWCP framework
 
 import inspect
+import re as regex
 from logging import Logger
-from typing import Any, Dict, List
+from typing import Any
 
 import mwcp
-import re as regex
 from maco.model import ConnUsageEnum, Encryption, ExtractorModel
-from mwcp import Parser
 
-from configextractor.frameworks.base import Extractor, Framework
+from configextractor.frameworks.base import Framework
 
 IP_REGEX_ONLY = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
 
@@ -200,7 +199,7 @@ def convert_to_MACO(metadata: list) -> dict:
 
 class MWCP(Framework):
     def __init__(self, logger: Logger):
-        super().__init__(logger, "yara_rule")
+        super().__init__(logger, "AUTHOR", "DESCRIPTION", None, "yara_rule")
         self.venv_script = """
 import importlib
 import os
@@ -222,16 +221,6 @@ with open("{output_path}", 'w') as fp:
         if inspect.isclass(module):
             # 'DESCRIPTION' has to be implemented otherwise will raise an exception according to MWCP
             return hasattr(module, "DESCRIPTION") and module.DESCRIPTION
-
-    def result_template(self, extractor: Extractor, yara_matches: List) -> Dict[str, str]:
-        template = super().result_template(extractor, yara_matches)
-        template.update(
-            {
-                "author": extractor.module.AUTHOR,
-                "description": extractor.module.DESCRIPTION,
-            }
-        )
-        return template
 
     def run(self, sample_path, parsers):
         results = list()
