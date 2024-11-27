@@ -5,7 +5,10 @@ import tempfile
 from collections import defaultdict
 from logging import Logger, getLogger
 from multiprocessing import Manager, Process
-from typing import Dict, List
+from multiprocessing.managers import ListProxy
+from traceback import format_exc
+from types import ModuleType
+from typing import Callable, Dict, List
 from urllib.parse import urlparse
 
 import cart
@@ -13,6 +16,20 @@ from maco import utils, yara
 
 from configextractor.frameworks import MACO, MWCP
 from configextractor.frameworks.base import Extractor, Framework
+
+
+def import_extractors(
+    root_directory: str,
+    scanner: yara.Rules,
+    extractor_module_callback: Callable[[ModuleType, str], None],
+    logger: Logger,
+    create_venv: bool,
+    exceptions: ListProxy,
+):
+    try:
+        utils.import_extractors(root_directory, scanner, extractor_module_callback, logger, create_venv)
+    except Exception:
+        exceptions.append(format_exc())
 
 
 class ConfigExtractor:
@@ -36,6 +53,7 @@ class ConfigExtractor:
         scanner = yara.compile("\n".join([fw_class.yara_rule for fw_class in self.FRAMEWORK_LIBRARY_MAPPING.values()]))
         with Manager() as manager:
             parsers = manager.dict()
+            exceptions = manager.list()
 
             def extractor_module_callback(module, venv):
                 # Check to see if we're blocking this potential extractor
@@ -72,8 +90,8 @@ class ConfigExtractor:
             processes = []
             for parsers_dir in parsers_dirs:
                 p = Process(
-                    target=utils.import_extractors,
-                    args=(parsers_dir, scanner, extractor_module_callback, logger, create_venv),
+                    target=import_extractors,
+                    args=(parsers_dir, scanner, extractor_module_callback, logger, create_venv, exceptions),
                 )
                 processes.append(p)
                 p.start()
@@ -81,6 +99,10 @@ class ConfigExtractor:
             # Wait for all the processes to terminate
             for p in processes:
                 p.join()
+
+            exceptions = list(exceptions)
+            if exceptions:
+                raise Exception(f"Exception occurred while importing extractors: {exceptions}")
 
             self.parsers = {id: Extractor(**extractor_kwargs) for id, extractor_kwargs in dict(parsers).items()}
 
