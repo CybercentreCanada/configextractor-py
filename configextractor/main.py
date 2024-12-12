@@ -30,7 +30,7 @@ def import_extractors(
         utils.import_extractors(extractor_module_callback=extractor_module_callback,
                                 root_directory=root_directory,
                                 scanner=scanner, 
-                                logger=logger
+                                logger=logger,
                                 create_venv=create_venv)
     except Exception:
         exceptions.append(format_exc())
