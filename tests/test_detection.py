@@ -139,14 +139,12 @@ def test_module_conflict():
     import shutil
     import git
 
-    # This test covers 2 scenarios:
-    # 1) Targetted directories that have the same name as an installed package should't prevent loading extractors
-    # 2) Loading the same extractor directory twice from different parent directories should yield the same results
+    # Loading the same extractor directory twice from different parent directories should yield the same results
 
     previous_run = None
     for _ in range(2):
         with TemporaryDirectory() as ex_copy:
-            copy_ex_dir = f"{ex_copy}/git"
+            copy_ex_dir = f"{ex_copy}/test"
             shutil.copytree(f"{TESTS_DIR}/parsers", copy_ex_dir, dirs_exist_ok=True)
             cx = ConfigExtractor([copy_ex_dir])
             assert cx.parsers
