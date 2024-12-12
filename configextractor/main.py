@@ -27,7 +27,13 @@ def import_extractors(
     exceptions: ListProxy,
 ):
     try:
-        utils.import_extractors(root_directory, scanner, extractor_module_callback, logger, create_venv)
+        utils.import_extractors(
+            extractor_module_callback=extractor_module_callback,
+            root_directory=root_directory,
+            scanner=scanner,
+            logger=logger,
+            create_venv=create_venv,
+        )
     except Exception:
         exceptions.append(format_exc())
 
