@@ -24,6 +24,7 @@ def import_extractors(
     extractor_module_callback: Callable[[ModuleType, str], None],
     logger: Logger,
     create_venv: bool,
+    skip_install: bool,
     exceptions: ListProxy,
 ):
     try:
@@ -33,6 +34,7 @@ def import_extractors(
             scanner=scanner,
             logger=logger,
             create_venv=create_venv,
+            skip_install=skip_install,
         )
     except Exception:
         exceptions.append(format_exc())
@@ -46,6 +48,7 @@ class ConfigExtractor:
         parser_blocklist: List[str] = [],
         create_venv: bool = False,
         framework_classes: List[Framework] = [MACO, MWCP],
+        skip_install: bool = False,
     ) -> None:
         if not logger:
             logger = getLogger()
@@ -97,7 +100,15 @@ class ConfigExtractor:
             for parsers_dir in parsers_dirs:
                 p = Process(
                     target=import_extractors,
-                    args=(parsers_dir, scanner, extractor_module_callback, logger, create_venv, exceptions),
+                    args=(
+                        parsers_dir,
+                        scanner,
+                        extractor_module_callback,
+                        logger,
+                        create_venv,
+                        skip_install,
+                        exceptions,
+                    ),
                 )
                 processes.append(p)
                 p.start()
