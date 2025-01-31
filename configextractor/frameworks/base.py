@@ -95,7 +95,7 @@ class Framework:
     def run_in_venv(self, sample_path: str, extractor: Extractor) -> Dict[str, dict]:
         # Run in extractor with sample in virtual enviroment using the MACO utility
         module_name, extractor_class = extractor.id.rsplit(".", 1)
-        return utils.run_extractor(
+        output = utils.run_extractor(
             sample_path,
             module_name,
             extractor_class,
@@ -104,3 +104,8 @@ class Framework:
             self.venv_script,
             json_decoder=None,
         )
+
+        if not isinstance(output, dict):
+            output = output.model_dump(exclude_none=True, exclude_defaults=True)
+
+        return output
