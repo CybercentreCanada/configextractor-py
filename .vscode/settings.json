@@ -20,6 +20,7 @@
         "tests"
     ],
     "python.testing.pytestEnabled": true,
-    "ruff.configuration": "ruff.toml",
-    "ruff.lint.enable": true
+    "ruff.lint.enable": true,
+    "ruff.configuration": "pyproject.toml",
+    "ruff.lint.preview": true
 }

@@ -1,3 +1,5 @@
+"""Base framework class."""
+
 from logging import Logger
 from typing import Dict, List, Union
 
@@ -5,7 +7,7 @@ from maco import utils, yara
 
 
 class Extractor:
-    """Represents a configuration extractor module
+    """Represents a configuration extractor module.
 
     Attributes:
       id (str): Unique identifier for the extractor
@@ -19,6 +21,7 @@ class Extractor:
     """
 
     def __init__(self, id, author, description, sharing, framework, module_path, yara_rule, venv=None) -> None:
+        """Initialize an Extractor."""
         self.id = id
         self.author = author
         self.description = description
@@ -30,7 +33,7 @@ class Extractor:
 
 
 class Framework:
-    """Abstract class for a configuration extractor framework
+    """Abstract class for a configuration extractor framework.
 
     Attributes:
       log (Logger): Logger for the framework
@@ -50,6 +53,7 @@ class Framework:
         sharing_attr_name=None,
         yara_attr_name=None,
     ):
+        """Initialize a Framework."""
         self.log = logger
         self.author_attr_name = author_attr_name
         self.description_attr_name = description_attr_name
@@ -60,40 +64,40 @@ class Framework:
 
     @staticmethod
     def get_classification(extractor: Extractor) -> str:
-        """Get classification of extractor module
+        """Get classification of extractor module.
 
         Args:
           extractor (Extractor): Extractor module to get the classification of
 
         Returns:
-          The classification of module
+          (str): The classification of module
 
         """
         return extractor.sharing
 
     @staticmethod
     def get_name(extractor: Extractor):
-        """Get name of extractor module
+        """Get name of extractor module.
 
         Args:
           extractor (Extractor): Extractor module to get the name of
 
         Returns:
-          The name of module
+          (str): The name of module
 
         """
         return extractor.id.split(".")[-1]
 
     # Define a template for results from this Extractor
     def result_template(self, extractor: Extractor, yara_matches: List[yara.Match]) -> Dict[str, str]:
-        """A template for results from an extractor
+        """A template for results from an extractor.
 
         Args:
           extractor (Extractor): Extractor module
           yara_matches (List[yara.Match]): YARA matches for the extractor
 
         Returns:
-          Result template which is the baseline for all results from the extractor under the framework
+          (Dict[str, str]): Result template which is the baseline for all results from the extractor under the framework
 
         """
         return dict(
@@ -104,13 +108,13 @@ class Framework:
         )
 
     def extract_metadata_from_module(self, decoder: object) -> Dict[str, str]:
-        """Extracts metadata from a module
+        """Extracts metadata from a module.
 
         Args:
           decoder (object): Module to extract metadata from
 
         Returns:
-          Metadata extracted from the module
+          (Dict[str, str]): Metadata extracted from the module
 
         """
         return {
@@ -121,13 +125,13 @@ class Framework:
         }
 
     def extract_author(self, decoder: object) -> Union[str, None]:
-        """Extract author from module
+        """Extract author from module.
 
         Args:
           decoder (object): Module to extract author from
 
         Returns:
-          Author of the module if found, None otherwise
+          (Union[str, None]): Author of the module if found, None otherwise
 
         """
         if self.author_attr_name and hasattr(decoder, self.author_attr_name):
@@ -135,26 +139,26 @@ class Framework:
             return getattr(decoder, self.author_attr_name)
 
     def extract_description(self, decoder: object) -> Union[str, None]:
-        """Extracts description from module
+        """Extracts description from module.
 
         Args:
           decoder (object): Module to extract description from
 
         Returns:
-          Description of the module if found, None otherwise
+          (Union[str, None]): Description of the module if found, None otherwise
         """
         if self.description_attr_name and hasattr(decoder, self.description_attr_name):
             # Extractor description found
             return getattr(decoder, self.description_attr_name)
 
     def extract_sharing(self, decoder: object) -> Union[str, None]:
-        """Extract sharing from module
+        """Extract sharing from module.
 
         Args:
           decoder (object): Module to extract sharing from
 
         Returns:
-          Sharing classification of the module if found, None
+          (Union[str, None]): Sharing classification of the module if found, None
 
         """
         if self.sharing_attr_name and hasattr(decoder, self.sharing_attr_name):
@@ -162,13 +166,13 @@ class Framework:
             return getattr(decoder, self.sharing_attr_name)
 
     def extract_yara(self, decoder: object) -> Union[str, None]:
-        """Extract YARA rule from module
+        """Extract YARA rule from module.
 
         Args:
           decoder (object): Module to extract YARA rule from
 
         Returns:
-          YARA rule of the module if found, None otherwise
+          (Union[str, None]): YARA rule of the module if found, None otherwise
 
         """
         if self.yara_attr_name and hasattr(decoder, self.yara_attr_name):
@@ -176,21 +180,17 @@ class Framework:
             return getattr(decoder, self.yara_attr_name)
 
     def validate(self, module: object) -> bool:
-        """Validate module against framework
+        """Validate module against framework.
 
         This method should be implemented by the framework subclass to validate a module belongs to the framework
 
         Args:
           module (onject): Module to validate
-
-        Returns:
-          True if module is valid for a given framework, False otherwise
-
         """
         NotImplementedError()
 
     def run(self, sample_path: str, parsers: Dict[Extractor, List[yara.Match]]) -> List[dict]:
-        """Run a series of modules
+        """Run a series of modules.
 
         This function should specify how to run a series of modules on a sample under the framework
 
@@ -199,12 +199,12 @@ class Framework:
           parsers (Dict[Extractor, List[yara.Match]]): Extractor modules and their YARA matches
 
         Returns:
-          List of results from the modules
+          (List[dict]): List of results from the modules
         """
         return NotImplementedError()
 
     def run_in_venv(self, sample_path: str, extractor: Extractor) -> Dict[str, dict]:
-        """Run an extractor in a virtual environment
+        """Run an extractor in a virtual environment.
 
         This function should specify how to run an extractor in a virtual environment.
         By default, it uses the MACO utility to run the extractor as a subprocess.
@@ -214,7 +214,7 @@ class Framework:
           extractor (Extractor): Extractor module to run
 
         Returns:
-          Results from the extractor
+          (Dict[str, dict]): Results from the extractor
 
         """
         # Run in extractor with sample in virtual enviroment using the MACO utility

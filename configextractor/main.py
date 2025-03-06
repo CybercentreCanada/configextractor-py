@@ -1,4 +1,5 @@
-# Main module for ConfigExtractor library
+"""Main module for ConfigExtractor library."""
+
 import inspect
 import re as regex
 import tempfile
@@ -27,7 +28,7 @@ def import_extractors(
     skip_install: bool,
     exceptions: ListProxy,
 ):
-    """Import extractors from a directory
+    """Import extractors from a directory.
 
     Args:
       root_directory (str): Root directory to import extractors from
@@ -53,7 +54,7 @@ def import_extractors(
 
 
 class ConfigExtractor:
-    """Main class for ConfigExtractor
+    """Main class for ConfigExtractor.
 
     Attributes:
         parsers (Dict[str, Extractor]): Extractors to run
@@ -71,6 +72,19 @@ class ConfigExtractor:
         framework_classes: List[Framework] = [MACO, MWCP],
         skip_install: bool = False,
     ) -> None:
+        """Initialize ConfigExtractor.
+
+        Args:
+          parsers_dirs (List[str]): List of directories containing parsers
+          logger (Logger): Logger to use
+          parser_blocklist (List[str]): List of regex patterns to block parsers
+          create_venv (bool): Create venvs whenever you encounter a requirements.txt file during scanning
+          framework_classes (List[Framework]): List of framework classes to use
+          skip_install (bool): Skip installing dependencies for extractors
+
+        Raises:
+            Exception: If an exception occurs while importing extractors
+        """
         if not logger:
             logger = getLogger()
         self.log = logger
@@ -86,7 +100,7 @@ class ConfigExtractor:
             exceptions = manager.list()
 
             def extractor_module_callback(module: object, venv: str):
-                """Callback function to call when an extractor module is found
+                """Callback function to call when an extractor module is found.
 
                 Args:
                   module (object): Python module to check if it's an extractor
@@ -166,13 +180,13 @@ class ConfigExtractor:
             self.log.info(f"Ignoring output from the following parsers matching: {parser_blocklist}")
 
     def get_details(self, extractor: Extractor) -> Dict[str, str]:
-        """Get details about a parser
+        """Get details about a parser.
 
         Args:
           extractor (Extractor): Extractor to get details about
 
         Returns:
-            A mapping containing information about the extractor
+            (Dict[str, str]): A mapping containing information about the extractor
 
         """
         fw_cls = self.FRAMEWORK_LIBRARY_MAPPING[extractor.framework]
@@ -187,7 +201,7 @@ class ConfigExtractor:
         }
 
     def finalize(self, results: List[dict]):
-        """Finalize the results
+        """Finalize the results.
 
         Args:
           results (List[dict]): Results of the parsers
@@ -211,14 +225,14 @@ class ConfigExtractor:
                         network_conn[part] = value
 
     def run_parsers(self, sample: str, parser_blocklist: List[str] = []) -> Dict[str, List[dict]]:
-        """Run parsers on a sample
+        """Run parsers on a sample.
 
         Args:
           sample (str): Path to the sample to run the parsers on
           parser_blocklist (List[str]): List of regex patterns to block parsers. Defaults to [].
 
         Returns:
-            Results from the parsers across different frameworks
+            (Dict[str, List[dict]]): Results from the parsers across different frameworks
 
         """
         results = dict()
@@ -258,7 +272,8 @@ class ConfigExtractor:
             for framework, parser_list in parsers_to_run.items():
                 if parser_list:
                     self.log.debug(
-                        f"Running the following under the {framework} framework with YARA: {[p.id for p in parser_list]}"
+                        f"Running the following under the {framework} framework with YARA: "
+                        + f"{[p.id for p in parser_list]}"
                     )
                     result = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(sample_copy.name, parser_list)
                     self.finalize(result)

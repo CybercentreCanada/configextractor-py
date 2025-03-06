@@ -1,3 +1,5 @@
+"""Tests for running ConfigExtractor against samples."""
+
 import os
 from tempfile import NamedTemporaryFile
 
@@ -11,7 +13,11 @@ TESTS_DIR = os.path.dirname(__file__)
 
 @pytest.fixture
 def cx():
-    """Initialize ConfigExtractor with the parsers directory"""
+    """Initialize ConfigExtractor with the parsers directory.
+
+    Yields:
+        ConfigExtractor instance
+    """
     import os
     import shutil
 
@@ -21,7 +27,7 @@ def cx():
 
 
 def test_finalize_uri(cx: ConfigExtractor):
-    """Test that URIs are normalized in the final results
+    """Test that URIs are normalized in the final results.
 
     Args:
       cx: ConfigExtractor instance
@@ -33,7 +39,7 @@ def test_finalize_uri(cx: ConfigExtractor):
 
 
 def test_venv(cx: ConfigExtractor):
-    """Test running extractors in a virtual environment
+    """Test running extractors in a virtual environment.
 
     Args:
       cx: ConfigExtractor instance
@@ -51,7 +57,7 @@ def test_venv(cx: ConfigExtractor):
 
 
 def test_itty_bitty_file(cx: ConfigExtractor):
-    """Test running extractors on a small file
+    """Test running extractors on a small file.
 
     Args:
       cx: ConfigExtractor instance
@@ -67,7 +73,7 @@ def test_itty_bitty_file(cx: ConfigExtractor):
 
 
 def test_uri_expansion(cx: ConfigExtractor):
-    """Test that URIs are expanded in the final results
+    """Test that URIs are expanded in the final results.
 
     Args:
       cx: ConfigExtractor instance

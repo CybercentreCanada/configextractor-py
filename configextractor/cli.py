@@ -1,3 +1,5 @@
+"""Command line interface for ConfigExtractor."""
+
 import binascii
 import json
 import logging
@@ -48,7 +50,7 @@ from configextractor.main import ConfigExtractor
 def main(
     parsers_paths: List[str], sample_paths: List[str], block: List[str], verbosity: str, create_venv: bool
 ) -> None:
-    """Run ConfigExtractor
+    """Run ConfigExtractor.
 
     Args:
       parsers_paths (List[str]): List of paths to parsers

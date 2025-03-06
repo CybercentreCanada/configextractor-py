@@ -1,4 +1,4 @@
-# MWCP framework
+"""MWCP Framework."""
 
 import inspect
 import re as regex
@@ -33,18 +33,18 @@ rule MWCP {
 
 
 def convert_to_MACO(metadata: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Convert MWCP output to MACO format
+    """Convert MWCP output to MACO format.
 
     Args:
       metadata (List[Dict[str, Any]]): MWCP metadata
 
     Returns:
-        Data converted to MACO format
+        (Dict[str, Any]): Data converted to MACO format
 
     """
 
     def handle_socket(meta: Dict[str, str]) -> None:
-        """Handle socket connections
+        """Handle socket connections.
 
         Args:
           meta (Dict[str, str]): Socket metadata
@@ -65,7 +65,7 @@ def convert_to_MACO(metadata: List[Dict[str, Any]]) -> Dict[str, Any]:
                 net_list.append(conn)
 
     def handle_encryption(meta: Dict[str, str]) -> None:
-        """Handle encryption metadata
+        """Handle encryption metadata.
 
         Args:
           meta (Dict[str, str]): Encryption metadata
@@ -219,9 +219,14 @@ def convert_to_MACO(metadata: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 class MWCP(Framework):
-    """MWCP framework for configuration extraction"""
+    """MWCP framework for configuration extraction."""
 
     def __init__(self, logger: Logger):
+        """Initialize the MWCP framework.
+
+        Args:
+          logger (Logger): Logger to use
+        """
         super().__init__(logger, "AUTHOR", "DESCRIPTION", None, "yara_rule")
         self.venv_script = """
 import importlib
@@ -241,13 +246,13 @@ with open("{output_path}", 'w') as fp:
         self.yara_rule = MWCP_YARA_RULE
 
     def validate(self, module: object) -> bool:
-        """Validate the extractor module using attributes we expect to find in MWCP extractors
+        """Validate the extractor module using attributes we expect to find in MWCP extractors.
 
         Args:
           module (object): Extractor module
 
         Returns:
-            True if the module is valid, False otherwise
+            (bool): True if the module is valid, False otherwise
 
         """
         if inspect.isclass(module):
@@ -255,14 +260,14 @@ with open("{output_path}", 'w') as fp:
             return hasattr(module, "DESCRIPTION") and module.DESCRIPTION
 
     def run(self, sample_path: str, parsers: Dict[Extractor, List[yara.Match]]) -> List[dict]:
-        """Run MWCP parsers on a sample
+        """Run MWCP parsers on a sample.
 
         Args:
           sample_path (str): Path to the sample to run the modules on
           parsers (Dict[Extractor, List[yara.Match]]): Extractor modules and their YARA matches
 
         Returns:
-            List of results from the modules
+            (List[dict]): List of results from the modules
 
         """
         results = list()

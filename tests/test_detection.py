@@ -1,3 +1,5 @@
+"""Tests for ConfigExtractor to detect extractors from supported frameworks."""
+
 import os
 from typing import List
 
@@ -112,11 +114,11 @@ CAPE_EXTRACTORS = [
     ),
 )
 def test_public_projects(repository_url: str, extractors: List[str], python_minor: int, branch: str):
-    """Test compatibility with public projects
+    """Test compatibility with public projects.
 
     Args:
       repository_url (str): URL to the repository
-      extractors List[str]: List of expected extractors to be able to detect
+      extractors (List[str]): List of expected extractors to be able to detect
       python_minor (int): Minor version of Python to test with
       branch (str): Branch to clone from
     """
@@ -145,7 +147,11 @@ def test_public_projects(repository_url: str, extractors: List[str], python_mino
 
 
 def test_module_conflict():
-    """Test that loading the same extractor directory twice from different parent directories yields the same results"""
+    """Check to see if we'll run into an issue with module name conflicts.
+
+    Test that loading the same extractor directory twice from different parent directories yields the same results.
+
+    """
     import shutil
     from tempfile import TemporaryDirectory
 
