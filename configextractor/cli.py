@@ -2,6 +2,7 @@ import binascii
 import json
 import logging
 import os
+from typing import List
 
 import click
 
@@ -44,7 +45,18 @@ from configextractor.main import ConfigExtractor
     is_flag=True,
     default=False,
 )
-def main(parsers_paths, sample_paths, block, verbosity, create_venv) -> None:
+def main(
+    parsers_paths: List[str], sample_paths: List[str], block: List[str], verbosity: str, create_venv: bool
+) -> None:
+    """Run ConfigExtractor
+
+    Args:
+      parsers_paths (List[str]): List of paths to parsers
+      sample_paths (List[str]): List of paths to samples
+      block (List[str]): List of regex patterns to block parsers
+      verbosity (str): Logging verbosity
+      create_venv (bool): Create venvs whenever you encounter a requirements.txt file during scanning
+    """
     logger = logging.getLogger("cx")
     logger.setLevel(verbosity)
     logger.addHandler(logging.StreamHandler())
@@ -65,9 +77,13 @@ def main(parsers_paths, sample_paths, block, verbosity, create_venv) -> None:
                         results[file_path] = result
 
     print("Results:")
-    print(json.dumps(results,
-                     indent=2,
-                     default=lambda x: binascii.hexlify(x[:32]).decode("utf8").upper() if isinstance(x, bytes) else None))
+    print(
+        json.dumps(
+            results,
+            indent=2,
+            default=lambda x: binascii.hexlify(x[:32]).decode("utf8").upper() if isinstance(x, bytes) else None,
+        )
+    )
 
 
 if __name__ == "__main__":

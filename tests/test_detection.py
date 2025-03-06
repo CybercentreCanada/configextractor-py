@@ -1,5 +1,7 @@
-import pytest
 import os
+from typing import List
+
+import pytest
 
 from configextractor.main import ConfigExtractor
 
@@ -109,14 +111,22 @@ CAPE_EXTRACTORS = [
         "CAPESandbox/community",
     ),
 )
-def test_public_projects(repository_url: str, extractors: list, python_minor: int, branch: str):
+def test_public_projects(repository_url: str, extractors: List[str], python_minor: int, branch: str):
+    """Test compatibility with public projects
+
+    Args:
+      repository_url (str): URL to the repository
+      extractors List[str]: List of expected extractors to be able to detect
+      python_minor (int): Minor version of Python to test with
+      branch (str): Branch to clone from
+    """
     # Ensure that any changes we make doesn't break usage of public projects
     # which can affect downstream systems using like library (ie. Assemblyline)
     import os
     import sys
+    from tempfile import TemporaryDirectory
 
     from git import Repo
-    from tempfile import TemporaryDirectory
 
     if sys.version_info >= (3, python_minor):
         with TemporaryDirectory() as working_dir:
@@ -135,9 +145,9 @@ def test_public_projects(repository_url: str, extractors: list, python_minor: in
 
 
 def test_module_conflict():
-    from tempfile import TemporaryDirectory
+    """Test that loading the same extractor directory twice from different parent directories yields the same results"""
     import shutil
-    import git
+    from tempfile import TemporaryDirectory
 
     # Loading the same extractor directory twice from different parent directories should yield the same results
 
