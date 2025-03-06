@@ -1,6 +1,7 @@
 # ConfigExtractor
 
-<a href="https://pypi.org/project/configextractor-py/#history"><img src="https://img.shields.io/pypi/v/configextractor-py.svg" alt="Latest Stable Release"></a>
+[![Latest Stable Release](https://img.shields.io/pypi/v/configextractor-py)](./LICENSE)
+[![License](https://img.shields.io/github/license/CybercentreCanada/configextractor-py)](./LICENSE)
 
 Maintainer: @cccs-rs
 
