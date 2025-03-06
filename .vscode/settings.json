@@ -1,4 +1,7 @@
 {
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff"
+    },
     "editor.codeActionsOnSave": {
         "source.organizeImports": "explicit"
     },
@@ -12,13 +15,11 @@
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,
     "files.trimTrailingWhitespace": true,
-    "[python]": {
-        "editor.defaultFormatter": "charliermarsh.ruff"
-    },
-    "ruff.configuration": "ruff.toml",
-    "ruff.lint.enable": true,
+    "pre-commit-helper.runOnSave": "all hooks",
     "python.testing.pytestArgs": [
         "tests"
     ],
     "python.testing.pytestEnabled": true,
+    "ruff.configuration": "ruff.toml",
+    "ruff.lint.enable": true
 }
