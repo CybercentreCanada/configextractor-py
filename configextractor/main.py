@@ -27,6 +27,18 @@ def import_extractors(
     skip_install: bool,
     exceptions: ListProxy,
 ):
+    """Import extractors from a directory
+
+    Args:
+      root_directory (str): Root directory to import extractors from
+      scanner (yara.Rules): YARA scanner to use to find extractors from a certain framework
+      extractor_module_callback (Callable[[ModuleType, str], None]):
+        Callback function to call when an possible extractor module is found
+      logger (Logger): Logger to use
+      create_venv (bool): Whether to create a virtual environment for the extractor
+      skip_install (bool): Whether to skip installing dependencies
+      exceptions (ListProxy): List to store exceptions in
+    """
     try:
         utils.import_extractors(
             extractor_module_callback=extractor_module_callback,
@@ -41,6 +53,15 @@ def import_extractors(
 
 
 class ConfigExtractor:
+    """Main class for ConfigExtractor
+
+    Attributes:
+        parsers (Dict[str, Extractor]): Extractors to run
+        yara (yara.Rules): YARA rules to run to determine which extractors to run
+        log (Logger): Logger to use
+        FRAMEWORK_LIBRARY_MAPPING (Dict[str, Framework]): Mapping of framework names to framework classes
+    """
+
     def __init__(
         self,
         parsers_dirs: List[str],
@@ -64,7 +85,13 @@ class ConfigExtractor:
             parsers = manager.dict()
             exceptions = manager.list()
 
-            def extractor_module_callback(module, venv):
+            def extractor_module_callback(module: object, venv: str):
+                """Callback function to call when an extractor module is found
+
+                Args:
+                  module (object): Python module to check if it's an extractor
+                  venv (str): Virtual environment to associate with the extractor
+                """
                 # Check to see if we're blocking this potential extractor
                 for fw_name, fw_class in self.FRAMEWORK_LIBRARY_MAPPING.items():
                     members = inspect.getmembers(module, predicate=fw_class.validate)
@@ -139,6 +166,15 @@ class ConfigExtractor:
             self.log.info(f"Ignoring output from the following parsers matching: {parser_blocklist}")
 
     def get_details(self, extractor: Extractor) -> Dict[str, str]:
+        """Get details about a parser
+
+        Args:
+          extractor (Extractor): Extractor to get details about
+
+        Returns:
+            A mapping containing information about the extractor
+
+        """
         fw_cls = self.FRAMEWORK_LIBRARY_MAPPING[extractor.framework]
 
         # Extract details about parser
@@ -151,6 +187,11 @@ class ConfigExtractor:
         }
 
     def finalize(self, results: List[dict]):
+        """Finalize the results
+
+        Args:
+          results (List[dict]): Results of the parsers
+        """
         # Ensure schemes/protocol are present in HTTP configurations
         for config in results:
             config = config.get("config", {})
@@ -169,7 +210,17 @@ class ConfigExtractor:
                     if value:
                         network_conn[part] = value
 
-    def run_parsers(self, sample, parser_blocklist=[]):
+    def run_parsers(self, sample: str, parser_blocklist: List[str] = []) -> Dict[str, List[dict]]:
+        """Run parsers on a sample
+
+        Args:
+          sample (str): Path to the sample to run the parsers on
+          parser_blocklist (List[str]): List of regex patterns to block parsers. Defaults to [].
+
+        Returns:
+            Results from the parsers across different frameworks
+
+        """
         results = dict()
         parsers_to_run = defaultdict(lambda: defaultdict(list))
         block_regex = regex.compile("|".join(parser_blocklist)) if parser_blocklist else None

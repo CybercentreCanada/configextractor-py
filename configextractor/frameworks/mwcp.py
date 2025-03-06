@@ -3,12 +3,13 @@
 import inspect
 import re as regex
 from logging import Logger
-from typing import Any
+from typing import Any, Dict, List
 
 import mwcp
+from maco import yara
 from maco.model import ConnUsageEnum, Encryption, ExtractorModel
 
-from configextractor.frameworks.base import Framework
+from configextractor.frameworks.base import Extractor, Framework
 
 IP_REGEX_ONLY = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
 
@@ -31,8 +32,23 @@ rule MWCP {
 """
 
 
-def convert_to_MACO(metadata: list) -> dict:
-    def handle_socket(meta: dict) -> dict:
+def convert_to_MACO(metadata: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Convert MWCP output to MACO format
+
+    Args:
+      metadata (List[Dict[str, Any]]): MWCP metadata
+
+    Returns:
+        Data converted to MACO format
+
+    """
+
+    def handle_socket(meta: Dict[str, str]) -> None:
+        """Handle socket connections
+
+        Args:
+          meta (Dict[str, str]): Socket metadata
+        """
         net_protocol = meta.get("network_protocol") or "tcp"
         host, port = meta["address"], None
         if ":" in host:
@@ -48,7 +64,12 @@ def convert_to_MACO(metadata: list) -> dict:
             if conn not in net_list:
                 net_list.append(conn)
 
-    def handle_encryption(meta: dict) -> dict:
+    def handle_encryption(meta: Dict[str, str]) -> None:
+        """Handle encryption metadata
+
+        Args:
+          meta (Dict[str, str]): Encryption metadata
+        """
         # Encryption
         enc = {
             "algorithm": meta.get("algorithm"),
@@ -198,6 +219,8 @@ def convert_to_MACO(metadata: list) -> dict:
 
 
 class MWCP(Framework):
+    """MWCP framework for configuration extraction"""
+
     def __init__(self, logger: Logger):
         super().__init__(logger, "AUTHOR", "DESCRIPTION", None, "yara_rule")
         self.venv_script = """
@@ -217,12 +240,31 @@ with open("{output_path}", 'w') as fp:
 """
         self.yara_rule = MWCP_YARA_RULE
 
-    def validate(self, module: Any) -> bool:
+    def validate(self, module: object) -> bool:
+        """Validate the extractor module using attributes we expect to find in MWCP extractors
+
+        Args:
+          module (object): Extractor module
+
+        Returns:
+            True if the module is valid, False otherwise
+
+        """
         if inspect.isclass(module):
             # 'DESCRIPTION' has to be implemented otherwise will raise an exception according to MWCP
             return hasattr(module, "DESCRIPTION") and module.DESCRIPTION
 
-    def run(self, sample_path, parsers):
+    def run(self, sample_path: str, parsers: Dict[Extractor, List[yara.Match]]) -> List[dict]:
+        """Run MWCP parsers on a sample
+
+        Args:
+          sample_path (str): Path to the sample to run the modules on
+          parsers (Dict[Extractor, List[yara.Match]]): Extractor modules and their YARA matches
+
+        Returns:
+            List of results from the modules
+
+        """
         results = list()
 
         for parser, yara_matches in parsers.items():

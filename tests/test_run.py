@@ -1,6 +1,6 @@
+import os
 from tempfile import NamedTemporaryFile
 
-import os
 import pytest
 
 from configextractor.frameworks import MACO, MWCP
@@ -11,6 +11,7 @@ TESTS_DIR = os.path.dirname(__file__)
 
 @pytest.fixture
 def cx():
+    """Initialize ConfigExtractor with the parsers directory"""
     import os
     import shutil
 
@@ -19,14 +20,28 @@ def cx():
     yield ConfigExtractor([f"{TESTS_DIR}/venv_parsers"], create_venv=True)
 
 
-def test_finalize_uri(cx):
+def test_finalize_uri(cx: ConfigExtractor):
+    """Test that URIs are normalized in the final results
+
+    Args:
+      cx: ConfigExtractor instance
+      cx: ConfigExtractor:
+      cx: ConfigExtractor:
+    """
     # Bug: URIs prepended with an extra protocol because it thought it was missing because of casing difference
     results = [{"config": {"http": [{"uri": "https://bad.com", "protocol": "HTTPS"}]}}]
     cx.finalize(results)
     assert results[0]["config"]["http"][0]["uri"] == "https://bad.com"
 
 
-def test_venv(cx):
+def test_venv(cx: ConfigExtractor):
+    """Test running extractors in a virtual environment
+
+    Args:
+      cx: ConfigExtractor instance
+      cx: ConfigExtractor:
+      cx: ConfigExtractor:
+    """
     maco: Extractor = cx.parsers["venv_parsers.maco_extractor.MACO"]
     mwcp: Extractor = cx.parsers["venv_parsers.mwcp_extractor.MWCP"]
 
@@ -39,7 +54,14 @@ def test_venv(cx):
         assert MWCP(logger=None).run_in_venv(sample_path=sample.name, extractor=mwcp)
 
 
-def test_itty_bitty_file(cx):
+def test_itty_bitty_file(cx: ConfigExtractor):
+    """Test running extractors on a small file
+
+    Args:
+      cx: ConfigExtractor instance
+      cx: ConfigExtractor:
+      cx: ConfigExtractor:
+    """
     file_content = b"Hello world"
 
     # Create a small test file to run with the extractor
@@ -50,7 +72,14 @@ def test_itty_bitty_file(cx):
         assert cx.run_parsers(sample.name)["MACO"][0]["config"]["decoded_strings"] == [file_content.decode()]
 
 
-def test_uri_expansion(cx):
+def test_uri_expansion(cx: ConfigExtractor):
+    """Test that URIs are expanded in the final results
+
+    Args:
+      cx: ConfigExtractor instance
+      cx: ConfigExtractor:
+      cx: ConfigExtractor:
+    """
     # If only a URI is provided in the results, then let's fill in what we know
     result = {"config": {"http": [{"uri": "https://abc:80/path/to?string=true#hello"}]}}
     cx.finalize([result])

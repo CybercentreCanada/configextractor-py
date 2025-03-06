@@ -1,4 +1,4 @@
-# MALDUCK framework
+# MALDUCK framework (TODO - Update relative to https://github.com/CERT-Polska/mwdb_iocextract/pull/38  )
 
 import json
 import os
