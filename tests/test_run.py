@@ -25,8 +25,6 @@ def test_finalize_uri(cx: ConfigExtractor):
 
     Args:
       cx: ConfigExtractor instance
-      cx: ConfigExtractor:
-      cx: ConfigExtractor:
     """
     # Bug: URIs prepended with an extra protocol because it thought it was missing because of casing difference
     results = [{"config": {"http": [{"uri": "https://bad.com", "protocol": "HTTPS"}]}}]
@@ -39,8 +37,6 @@ def test_venv(cx: ConfigExtractor):
 
     Args:
       cx: ConfigExtractor instance
-      cx: ConfigExtractor:
-      cx: ConfigExtractor:
     """
     maco: Extractor = cx.parsers["venv_parsers.maco_extractor.MACO"]
     mwcp: Extractor = cx.parsers["venv_parsers.mwcp_extractor.MWCP"]
@@ -59,8 +55,6 @@ def test_itty_bitty_file(cx: ConfigExtractor):
 
     Args:
       cx: ConfigExtractor instance
-      cx: ConfigExtractor:
-      cx: ConfigExtractor:
     """
     file_content = b"Hello world"
 
@@ -77,8 +71,6 @@ def test_uri_expansion(cx: ConfigExtractor):
 
     Args:
       cx: ConfigExtractor instance
-      cx: ConfigExtractor:
-      cx: ConfigExtractor:
     """
     # If only a URI is provided in the results, then let's fill in what we know
     result = {"config": {"http": [{"uri": "https://abc:80/path/to?string=true#hello"}]}}
