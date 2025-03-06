@@ -18,21 +18,6 @@ a wrapper for popular malware configuration data decoders from:
 
 ## Installation Guide
 
-### Setup YARA on Host
-
-```bash
-sudo apt-get update && sudo apt-get install -y git libssl-dev libmagic-dev automake libtool make gcc wget libjansson-dev pkg-config
-export YARA_VERSION=4.1.3
-wget -O /tmp/yara.tar.gz https://github.com/VirusTotal/yara/archive/v${YARA_VERSION}.tar.gz
-tar -zxf /tmp/yara.tar.gz -C /tmp
-cd /tmp/yara-${YARA_VERSION}
-./bootstrap.sh
-./configure --enable-magic --enable-dotnet --with-crypto --prefix /tmp/yara_install
-make
-make install
-pip install  --global-option="build" --global-option="--enable-dotnet" --global-option="--enable-magic" yara-python==$YARA_VERSION
-```
-
 ### Running in a Container
 
 ```bash
