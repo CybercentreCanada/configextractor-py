@@ -224,12 +224,13 @@ class ConfigExtractor:
                     if value:
                         network_conn[part] = value
 
-    def run_parsers(self, sample: str, parser_blocklist: List[str] = []) -> Dict[str, List[dict]]:
+    def run_parsers(self, sample: str, parser_blocklist: List[str] = [], timeout: int = 30) -> Dict[str, List[dict]]:
         """Run parsers on a sample.
 
         Args:
           sample (str): Path to the sample to run the parsers on
           parser_blocklist (List[str]): List of regex patterns to block parsers. Defaults to [].
+          timeout (int): How long to wait for each parser to complete. Defaults to 30 seconds.
 
         Returns:
             (Dict[str, List[dict]]): Results from the parsers across different frameworks
@@ -275,7 +276,7 @@ class ConfigExtractor:
                         f"Running the following under the {framework} framework with YARA: "
                         + f"{[p.id for p in parser_list]}"
                     )
-                    result = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(sample_copy.name, parser_list)
+                    result = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(sample_copy.name, parser_list, timeout)
                     self.finalize(result)
                     if result:
                         results[framework] = result

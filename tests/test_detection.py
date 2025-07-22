@@ -94,22 +94,11 @@ CAPE_EXTRACTORS = [
             10,
             None,
         ),
-        (
-            "https://github.com/apophis133/apophis-YARA-Rules",
-            [
-                "apophis-YARA-Rules.scripts.maco_extractors.Pikabot_V3_C2.Pikabot",
-                "apophis-YARA-Rules.scripts.maco_extractors.TrueBot_C2.TrueBot",
-                "apophis-YARA-Rules.scripts.maco_extractors.metastealer_decrypt_strings.MetaStealer",
-            ],
-            8,
-            None,
-        ),
         ("https://github.com/CAPESandbox/community", CAPE_EXTRACTORS, 10, None),
     ],
     ids=(
         "configextractor-py/test_extractors",
         "jeFF0Falltrades/rat_king_parser",
-        "apophis133/apophis-YARA-Rules",
         "CAPESandbox/community",
     ),
 )

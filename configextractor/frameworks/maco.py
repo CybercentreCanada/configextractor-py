@@ -2,13 +2,13 @@
 
 import json
 from logging import Logger
+from multiprocessing import Manager, Process
 from typing import Dict, List, Union
 
 from maco.exceptions import AnalysisAbortedException
 from maco.model import ExtractorModel
-from maco.utils import MACO_YARA_RULE
+from maco.utils import MACO_YARA_RULE, Base64Decoder, maco_extractor_validation
 from maco.utils import VENV_SCRIPT as MACO_VENV_SCRIPT
-from maco.utils import Base64Decoder, maco_extractor_validation
 
 from configextractor.frameworks.base import Extractor, Framework
 
@@ -38,41 +38,59 @@ class MACO(Framework):
         """
         return maco_extractor_validation(module)
 
-    def run(self, sample_path: str, parsers: Dict[Extractor, List[str]]) -> List[dict]:
+    def run(self, sample_path: str, parsers: Dict[Extractor, List[str]], timeout: int) -> List[dict]:
         """Run extractors from the MACO framework on the sample.
 
         Args:
           sample_path (str): Path to the sample to run the modules on
           parsers (Dict[Extractor, List[str]]): Extractor modules and their YARA matches
+          timeout (int): How long to wait for the extractor to finish
 
         Returns:
             (List[dict]): List of results from the modules
         """
-        results = list()
-        for extractor, yara_matches in parsers.items():
-            try:
-                result = self.result_template(extractor, yara_matches)
+        with Manager() as manager:
+            results = manager.list()
 
-                # Run MaCo parser with YARA matches
-                r: ExtractorModel = self.run_in_venv(sample_path, extractor)
+            def run_extractor(extractor: Extractor, yara_matches: List[str], results: List[Dict]) -> None:
+                """Run a single extractor and return the result."""
+                try:
+                    result = self.result_template(extractor, yara_matches)
 
-                if not (r or yara_matches):
-                    # Nothing to report
-                    continue
-                if r:
-                    result.update({"config": r.dict(exclude_defaults=True, exclude_none=True)})
+                    # Run MaCo parser with YARA matches
+                    r: ExtractorModel = self.run_in_venv(sample_path, extractor)
 
-            except AnalysisAbortedException:
-                # Extractor voluntarily aborted extraction
-                # This is the equivalent of the sample being invalid for the extractor
-                continue
+                    if not (r or yara_matches):
+                        # Nothing to report
+                        return
+                    if r:
+                        result.update({"config": r.dict(exclude_defaults=True, exclude_none=True)})
 
-            except Exception as e:
-                # Add exception to results
-                result["exception"] = str(e)
-                self.log.error(f"{extractor.id}: {e}")
-            results.append(result)
-        return results
+                except AnalysisAbortedException:
+                    # Extractor voluntarily aborted extraction
+                    # This is the equivalent of the sample being invalid for the extractor
+                    return
+
+                except Exception as e:
+                    # Add exception to results
+                    result["exception"] = str(e)
+                    self.log.error(f"{extractor.id}: {e}")
+                results.append(result)
+
+            processes = []
+            for extractor, yara_matches in parsers.items():
+                p = Process(
+                    target=run_extractor,
+                    args=(extractor, yara_matches, results),
+                )
+                p.start()
+                processes.append(p)
+
+            # Wait for all processes to finish
+            for p in processes:
+                p.join(timeout)
+
+            return list(results)
 
     def run_in_venv(self, sample_path: str, extractor: Extractor) -> Union[ExtractorModel, None]:
         """Run an extractor in a virtual environment.

@@ -189,7 +189,7 @@ class Framework:
         """
         NotImplementedError()
 
-    def run(self, sample_path: str, parsers: Dict[Extractor, List[yara.Match]]) -> List[dict]:
+    def run(self, sample_path: str, parsers: Dict[Extractor, List[yara.Match]], timeout: int) -> List[dict]:
         """Run a series of modules.
 
         This function should specify how to run a series of modules on a sample under the framework
@@ -197,6 +197,7 @@ class Framework:
         Args:
           sample_path (str): Path to the sample to run the modules on
           parsers (Dict[Extractor, List[yara.Match]]): Extractor modules and their YARA matches
+          timeout (int): How long to wait for each module to complete
 
         Returns:
           (List[dict]): List of results from the modules

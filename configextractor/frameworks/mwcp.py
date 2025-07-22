@@ -3,6 +3,7 @@
 import inspect
 import re as regex
 from logging import Logger
+from multiprocessing import Manager, Process
 from typing import Any, Dict, List
 
 import mwcp
@@ -259,54 +260,71 @@ with open("{output_path}", 'w') as fp:
             # 'DESCRIPTION' has to be implemented otherwise will raise an exception according to MWCP
             return hasattr(module, "DESCRIPTION") and module.DESCRIPTION
 
-    def run(self, sample_path: str, parsers: Dict[Extractor, List[yara.Match]]) -> List[dict]:
+    def run(self, sample_path: str, parsers: Dict[Extractor, List[yara.Match]], timeout: int) -> List[dict]:
         """Run MWCP parsers on a sample.
 
         Args:
           sample_path (str): Path to the sample to run the modules on
           parsers (Dict[Extractor, List[yara.Match]]): Extractor modules and their YARA matches
+          timeout (int): How long to wait for the extractor to finish
+
 
         Returns:
             (List[dict]): List of results from the modules
 
         """
-        results = list()
+        with Manager() as manager:
+            results = manager.list()
 
-        for parser, yara_matches in parsers.items():
-            parser_name = MWCP.get_name(parser)
-            try:
-                result = self.result_template(parser, yara_matches)
+            def run_extractor(parser: Extractor, yara_matches: List[str], results: List[Dict]) -> None:
+                parser_name = MWCP.get_name(parser)
+                try:
+                    result = self.result_template(parser, yara_matches)
 
-                r: dict = None
-                if parser.venv:
-                    r = self.run_in_venv(sample_path, parser)
-                else:
-                    # Just run MWCP parsers directly, using the filename to fetch the class attribute from module
-                    with open(sample_path, "rb") as f:
-                        r = mwcp.run(parser.module, data=f.read()).as_json_dict()
+                    r: dict = None
+                    if parser.venv:
+                        r = self.run_in_venv(sample_path, parser)
+                    else:
+                        # Just run MWCP parsers directly, using the filename to fetch the class attribute from module
+                        with open(sample_path, "rb") as f:
+                            r = mwcp.run(parser.module, data=f.read()).as_json_dict()
 
-                # Log any errors raised during execution
-                [self.log.error(e) for e in r["errors"]]
-                r = convert_to_MACO(r["metadata"])
-                if not (r or yara_matches):
-                    # Nothing of interest to report
-                    continue
+                    # Log any errors raised during execution
+                    [self.log.error(e) for e in r["errors"]]
+                    r = convert_to_MACO(r["metadata"])
+                    if not (r or yara_matches):
+                        # Nothing of interest to report
+                        return
 
-                family = parser_name
-                for y in yara_matches:
-                    if y.meta.get("malware"):
-                        family = y.meta["malware"]
-                        break
+                    family = parser_name
+                    for y in yara_matches:
+                        if y.meta.get("malware"):
+                            family = y.meta["malware"]
+                            break
 
-                r["family"] = family
-                result.update(
-                    {
-                        "config": ExtractorModel(**r).model_dump(exclude_defaults=True, exclude_none=True),
-                    }
+                    r["family"] = family
+                    result.update(
+                        {
+                            "config": ExtractorModel(**r).model_dump(exclude_defaults=True, exclude_none=True),
+                        }
+                    )
+
+                except Exception as e:
+                    result["exception"] = str(e)
+                    self.log.error(f"{parser.id}: {e}")
+                results.append(result)
+
+            processes = []
+            for extractor, yara_matches in parsers.items():
+                p = Process(
+                    target=run_extractor,
+                    args=(extractor, yara_matches, results),
                 )
+                p.start()
+                processes.append(p)
 
-            except Exception as e:
-                result["exception"] = str(e)
-                self.log.error(f"{parser.id}: {e}")
-            results.append(result)
-        return results
+            # Wait for all processes to finish
+            for p in processes:
+                p.join(timeout)
+
+            return list(results)
