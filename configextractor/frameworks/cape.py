@@ -210,6 +210,14 @@ if result:
                             except Exception as e:
                                 self.log.error(e)
 
+                    if not isinstance(r, dict):
+                        # Assume an exception was caught and returned as part of the output
+                        raise Exception(r["raw"])
+                    else:
+                        # Check to see if extracted configuration contains nothing but null-ish values
+                        if all([not v for v in r.values()]):
+                            return
+
                     r = convert_to_MACO(r)
                     if not (r or yara_matches):
                         # Nothing of interest to report
