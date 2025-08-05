@@ -9,7 +9,7 @@ from configextractor.main import ConfigExtractor
 
 TESTS_DIR = os.path.dirname(__file__)
 
-CAPE_EXTRACTORS = [
+COMMUNITY_CAPE_EXTRACTORS = [
     "community.modules.parsers.MACO.AgentTesla.AgentTesla",
     "community.modules.parsers.MACO.AsyncRAT.AsyncRAT",
     "community.modules.parsers.MACO.AuroraStealer.AuroraStealer",
@@ -84,22 +84,82 @@ CAPE_EXTRACTORS = [
 ]
 
 
+CAPE_EXRACTORS = [
+    "CAPE-parsers.cape_parsers.CAPE.community.AgentTesla",
+    "CAPE-parsers.cape_parsers.CAPE.community.Arkei",
+    "CAPE-parsers.cape_parsers.CAPE.community.AsyncRAT",
+    "CAPE-parsers.cape_parsers.CAPE.community.AuroraStealer",
+    "CAPE-parsers.cape_parsers.CAPE.community.Carbanak",
+    "CAPE-parsers.cape_parsers.CAPE.community.CobaltStrikeBeacon",
+    "CAPE-parsers.cape_parsers.CAPE.community.CobaltStrikeStager",
+    "CAPE-parsers.cape_parsers.CAPE.community.DCRat",
+    "CAPE-parsers.cape_parsers.CAPE.community.Fareit",
+    "CAPE-parsers.cape_parsers.CAPE.community.KoiLoader",
+    "CAPE-parsers.cape_parsers.CAPE.community.LokiBot",
+    "CAPE-parsers.cape_parsers.CAPE.community.Lumma",
+    "CAPE-parsers.cape_parsers.CAPE.community.NanoCore",
+    "CAPE-parsers.cape_parsers.CAPE.community.Nighthawk",
+    "CAPE-parsers.cape_parsers.CAPE.community.Njrat",
+    "CAPE-parsers.cape_parsers.CAPE.community.PhemedroneStealer",
+    "CAPE-parsers.cape_parsers.CAPE.community.QuasarRAT",
+    "CAPE-parsers.cape_parsers.CAPE.community.Snake",
+    "CAPE-parsers.cape_parsers.CAPE.community.SparkRAT",
+    "CAPE-parsers.cape_parsers.CAPE.community.Stealc",
+    "CAPE-parsers.cape_parsers.CAPE.community.VenomRAT",
+    "CAPE-parsers.cape_parsers.CAPE.community.XWorm",
+    "CAPE-parsers.cape_parsers.CAPE.community.XenoRAT",
+    "CAPE-parsers.cape_parsers.CAPE.core.Azorult",
+    "CAPE-parsers.cape_parsers.CAPE.core.BitPaymer",
+    "CAPE-parsers.cape_parsers.CAPE.core.Blister",
+    "CAPE-parsers.cape_parsers.CAPE.core.BruteRatel",
+    "CAPE-parsers.cape_parsers.CAPE.core.BumbleBee",
+    "CAPE-parsers.cape_parsers.CAPE.core.DarkGate",
+    "CAPE-parsers.cape_parsers.CAPE.core.DoppelPaymer",
+    "CAPE-parsers.cape_parsers.CAPE.core.DridexLoader",
+    "CAPE-parsers.cape_parsers.CAPE.core.GuLoader",
+    "CAPE-parsers.cape_parsers.CAPE.core.IcedID",
+    "CAPE-parsers.cape_parsers.CAPE.core.IcedIDLoader",
+    "CAPE-parsers.cape_parsers.CAPE.core.Latrodectus",
+    "CAPE-parsers.cape_parsers.CAPE.core.Oyster",
+    "CAPE-parsers.cape_parsers.CAPE.core.PikaBot",
+    "CAPE-parsers.cape_parsers.CAPE.core.PlugX",
+    "CAPE-parsers.cape_parsers.CAPE.core.QakBot",
+    "CAPE-parsers.cape_parsers.CAPE.core.Quickbind",
+    "CAPE-parsers.cape_parsers.CAPE.core.RedLine",
+    "CAPE-parsers.cape_parsers.CAPE.core.Remcos",
+    "CAPE-parsers.cape_parsers.CAPE.core.Rhadamanthys",
+    "CAPE-parsers.cape_parsers.CAPE.core.SmokeLoader",
+    "CAPE-parsers.cape_parsers.CAPE.core.Socks5Systemz",
+    "CAPE-parsers.cape_parsers.CAPE.core.SquirrelWaffle",
+    "CAPE-parsers.cape_parsers.CAPE.core.Strrat",
+    "CAPE-parsers.cape_parsers.CAPE.core.WarzoneRAT",
+    "CAPE-parsers.cape_parsers.CAPE.core.Zloader",
+]
+
+
 @pytest.mark.parametrize(
     "repository_url, extractors, python_minor, branch",
     [
-        (f"file://{TESTS_DIR}/parsers", ["parsers.maco_extractor.MACO", "parsers.mwcp_extractor.MWCP"], 8, None),
+        (
+            f"file://{TESTS_DIR}/parsers",
+            ["parsers.maco_extractor.MACO", "parsers.mwcp_extractor.MWCP", "parsers.cape_extractor"],
+            8,
+            None,
+        ),
         (
             "https://github.com/jeFF0Falltrades/rat_king_parser",
             ["rat_king_parser.extern.maco.rkp_maco.RKPMACO"],
             10,
             None,
         ),
-        ("https://github.com/CAPESandbox/community", CAPE_EXTRACTORS, 10, None),
+        ("https://github.com/CAPESandbox/community", COMMUNITY_CAPE_EXTRACTORS, 10, None),
+        ("https://github.com/CAPESandbox/CAPE-parsers", CAPE_EXRACTORS, 10, None),
     ],
     ids=(
         "configextractor-py/test_extractors",
         "jeFF0Falltrades/rat_king_parser",
         "CAPESandbox/community",
+        "CAPESandbox/CAPE-parsers",
     ),
 )
 def test_public_projects(repository_url: str, extractors: List[str], python_minor: int, branch: str):
