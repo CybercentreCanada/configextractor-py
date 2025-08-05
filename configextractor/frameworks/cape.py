@@ -180,7 +180,7 @@ if result:
             return "\n".join(yara_rules)
 
     def run(self, sample_path: str, parsers: Dict[Extractor, List[yara.Match]], timeout: int) -> List[dict]:
-        """Run MWCP parsers on a sample.
+        """Run CAPE parsers on a sample.
 
         Args:
           sample_path (str): Path to the sample to run the modules on
