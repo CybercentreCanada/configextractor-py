@@ -15,7 +15,7 @@ from urllib.parse import urlparse
 import cart
 from maco import utils, yara
 
-from configextractor.frameworks import MACO, MWCP
+from configextractor.frameworks import CAPE, MACO, MWCP
 from configextractor.frameworks.base import Extractor, Framework
 
 
@@ -69,7 +69,7 @@ class ConfigExtractor:
         logger: Logger = None,
         parser_blocklist: List[str] = [],
         create_venv: bool = False,
-        framework_classes: List[Framework] = [MACO, MWCP],
+        framework_classes: List[Framework] = [MACO, MWCP, CAPE],
         skip_install: bool = False,
     ) -> None:
         """Initialize ConfigExtractor.
@@ -108,7 +108,13 @@ class ConfigExtractor:
                 """
                 # Check to see if we're blocking this potential extractor
                 for fw_name, fw_class in self.FRAMEWORK_LIBRARY_MAPPING.items():
-                    members = inspect.getmembers(module, predicate=fw_class.validate)
+                    if fw_name == "CAPE" and fw_class.validate(module):
+                        # In CAPE's case, we just need to validate if the module loaded contains "extract_config"
+                        members = [("", module)]
+                    else:
+                        # Inspect the variables within the module to find the extractor class
+                        members = inspect.getmembers(module, predicate=fw_class.validate)
+
                     for _, member in members:
                         module_id = module.__name__
                         if member.__name__ != module.__name__:
@@ -117,9 +123,16 @@ class ConfigExtractor:
 
                         class_name = module_id.rsplit(".", 1)[1]
                         with open(module.__file__, "r") as fp:
-                            if f"class {class_name}" not in fp.read():
-                                # Class found is not in this file
-                                continue
+                            if fw_name == "CAPE":
+                                # In the case of CAPE, we want to ensure the definition of `extract_config` is in the
+                                # file we're looking at (not something that was imported in externally)
+                                if "\ndef extract_config" not in fp.read():
+                                    # Definition of function is not in this file
+                                    continue
+                            else:
+                                if f"class {class_name}" not in fp.read():
+                                    # Class found is not in this file
+                                    continue
 
                         if module_id.startswith("src."):
                             # Cleanup `src` from module_id
