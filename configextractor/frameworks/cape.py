@@ -166,10 +166,10 @@ if result:
                 return False
             elif len(parameters) == 1:
                 # Check if the parameter is annotated for bytes (which is what we expect when calling the function)
-                return parameters[0].annotation is inspect._empty or parameters[0].annotation is bytes
+                return parameters[0].annotation in [inspect._empty, bytes]
             else:
                 # Check to see if the first is annotated for bytes and all others have a default assigned
-                return (parameters[0].annotation is inspect._empty or parameters[0].annotation is bytes) and all(
+                return parameters[0].annotation in [inspect._empty, bytes] and all(
                     [p.default != inspect._empty for p in parameters[1:]]
                 )
         else:
