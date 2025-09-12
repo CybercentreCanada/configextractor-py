@@ -158,7 +158,22 @@ if result:
             (bool): True if the module is valid, False otherwise
 
         """
-        return hasattr(module, "extract_config") and inspect.isfunction(module.extract_config)
+        if hasattr(module, "extract_config") and inspect.isfunction(module.extract_config):
+            # Check the function's signature to ensure this is indicative of a CAPE parser
+            parameters = list(inspect.signature(module.extract_config).parameters.values())
+            if not parameters:
+                # No parameters for function, so not a CAPE parser
+                return False
+            elif len(parameters) == 1:
+                # Check if the parameter is annotated for bytes (which is what we expect when calling the function)
+                return parameters[0].annotation is inspect._empty | parameters[0].annotation is bytes
+            else:
+                # Check to see if the first is annotated for bytes and all others have a default assigned
+                return (parameters[0].annotation is inspect._empty | parameters[0].annotation is bytes) and all(
+                    [p.default != inspect._empty for p in parameters[1:]]
+                )
+        else:
+            return False
 
     def extract_yara(self, decoder) -> Optional[str]:
         """Extract YARA rules from CAPE parser module.
