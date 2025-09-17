@@ -61,11 +61,14 @@ def convert_to_MACO(cape_output: List[Dict[str, Any]]) -> Dict[str, Any]:
         scheme = parsed_url.scheme
 
         # Common connection information we can extract from the parsed URL
-        conn_data = {
-            component: getattr(parsed_url, component)
-            for component in ["hostname", "port", "username", "password", "path"]
-        }
+        conn_data = {}
+        for component in ["hostname", "port", "username", "password", "path"]:
+            part = getattr(parsed_url, component)
+            if part is None:
+                continue
+            conn_data[component] = part
         conn_data["usage"] = "c2"
+
         if scheme.startswith("http"):
             conn_data.update({"protocol": scheme, "uri": c2_string, "user_agent": config.get("user_agent")})
             config.setdefault("http", []).append(conn_data)
