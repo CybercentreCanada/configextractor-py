@@ -216,7 +216,7 @@ class ConfigExtractor:
                 uri: str = network_conn.get("uri")
                 if uri and not uri.startswith(network_conn["protocol"]):
                     # Ensure URI starts with protocol
-                    network_conn["uri"] = f"{network_conn['protocol']}://{uri}"
+                    network_conn["uri"] = uri = f"{network_conn['protocol']}://{uri}"
                 # Parse the URI and fill in missing sections where possible
                 parsed_uri = urlparse(uri)
                 for part in ["username", "password", "hostname", "port", "path", "query", "fragment"]:
