@@ -22,7 +22,7 @@ rule CAPE {
     meta:
         desc = "Used to match on Python files that contain CAPE extractors"
     strings:
-        $extractor_func = /def extract_config\(\w+(: bytes)?.*\)( -> \w+)?:/
+        $extractor_func = /def extract_config\(\w+(: bytes)?.*\)( -> .*)?:/
     condition:
         $extractor_func
 }
