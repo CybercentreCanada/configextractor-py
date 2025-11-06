@@ -12,8 +12,8 @@ a wrapper for popular malware configuration data decoders from:
 
 - [Maco](https://github.com/CybercentreCanada/Maco) [MIT license]
 - [MWCP](https://github.com/Defense-Cyber-Crime-Center/DC3-MWCP) [MIT license]
-- [CAPE Sandbox](https://github.com/kevoreilly/CAPEv2/) via Maco wrappers [GPL license]
-  - many thanks to [@kevoreilly](https://github.com/kevoreilly) for releasing so many open source parsers.
+- [CAPE Sandbox](https://github.com/kevoreilly/CAPEv2/) [GPL license] via [CAPE-parsers fork](https://github.com/cccs-rs/CAPE-parsers/tree/assemblyline) [MIT License]
+  - many thanks to [@kevoreilly](https://github.com/kevoreilly) and the CAPESandbox community for releasing so many open source parsers.
 - ~~MWCFG : https://github.com/c3rb3ru5d3d53c/mwcfg [BSD 3-Clause License]~~
   - [Pending support from malduck with structured output](https://github.com/CERT-Polska/malduck/pull/101)
 

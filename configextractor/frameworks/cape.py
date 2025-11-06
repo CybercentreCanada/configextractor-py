@@ -190,9 +190,9 @@ if result:
         yara_rules = []
         # There a multiple variable names across the CAPE extractors (both community and core)
         # where we can extract YARA rules from that target the extractor
-        for rule_var in ["yara_rule", "rule_source", "YARA_RULES", "RULE_SOURCE"]:
-            if hasattr(decoder, rule_var):
-                yara_rules.append(getattr(decoder, rule_var))
+        if hasattr(decoder, "detection_rule"):
+            # We're electing to priorize using the detection rules that CAPE uses in their project
+            yara_rules.append(getattr(decoder, "detection_rule"))
 
         if yara_rules:
             return "\n".join(yara_rules)
