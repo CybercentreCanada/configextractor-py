@@ -12,6 +12,7 @@ TESTS_DIR = os.path.dirname(__file__)
 CAPE_EXRACTORS = [
     "CAPE-parsers.cape_parsers.CAPE.community.AgentTesla",
     "CAPE-parsers.cape_parsers.CAPE.community.Amadey",
+    "CAPE-parsers.cape_parsers.CAPE.community.Amatera",
     "CAPE-parsers.cape_parsers.CAPE.community.Arkei",
     "CAPE-parsers.cape_parsers.CAPE.community.AsyncRAT",
     "CAPE-parsers.cape_parsers.CAPE.community.AuroraStealer",
