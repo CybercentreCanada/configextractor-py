@@ -77,7 +77,7 @@ CAPE_EXRACTORS = [
         (
             f"file://{TESTS_DIR}/parsers",
             ["parsers.maco_extractor.MACO", "parsers.mwcp_extractor.MWCP", "parsers.cape_extractor"],
-            8,
+            10,
             None,
         ),
         (
