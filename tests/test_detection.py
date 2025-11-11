@@ -82,7 +82,7 @@ CAPE_EXRACTORS = [
         ),
         (
             "https://github.com/jeFF0Falltrades/rat_king_parser",
-            ["rat_king_parser.extern.maco.rkp_maco.RKPMACO"],
+            ["rat_king_parser.src.rat_king_parser.extern.maco.rkp_maco.RKPMACO"],
             10,
             None,
         ),
