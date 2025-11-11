@@ -75,14 +75,39 @@ def convert_to_MACO(cape_output: List[Dict[str, Any]]) -> Dict[str, Any]:
         elif scheme == "ftp":
             config.setdefault(scheme, []).append(conn_data)
         elif scheme in ["tcp", "udp"]:
+            conn_data.pop("path", None)  # TCP/UDP doesn't have a path component
             # Map the host and port data to being affialiated with server
-            conn_data["server_port"] = conn_data.pop("port")
+            if "port" in conn_data:
+                conn_data["server_port"] = conn_data.pop("port")
             host = conn_data.pop("hostname")
             if regex.match(IP_REGEX_ONLY, host):
                 conn_data["server_ip"] = host
             else:
                 conn_data["server_domain"] = host
             config.setdefault(scheme, []).append(conn_data)
+        elif scheme == "smtp":
+            conn_data.pop("path", None)  # SMTP doesn't have a path component
+            # Check for anything to populate the "mail_to" field in the raw data
+            mail_to = []
+            for term in ['EmailTo', 'To Address']:
+                data = config["other"]["raw"].get(term)
+                if isinstance(data, str):
+                    mail_to.append(data)
+                elif isinstance(data, list):
+                    mail_to.extend(data)
+
+            if mail_to:
+                conn_data["mail_to"] = mail_to
+
+            # Check for anything to populate the "mail_from" field in the raw data
+            mail_from = None
+            for term in ['From Address']:
+                mail_from = config["other"]["raw"].get(term)
+
+            if mail_from:
+                conn_data["mail_from"] = mail_from
+
+            config.setdefault("smtp", []).append(conn_data)
 
     # Campaign
     campaign = cape_output.get("campaign")
