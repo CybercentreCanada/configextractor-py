@@ -9,7 +9,7 @@ from configextractor.main import ConfigExtractor
 
 TESTS_DIR = os.path.dirname(__file__)
 
-CAPE_EXRACTORS = [
+CAPE_EXTRACTORS = [
     "CAPE-parsers.cape_parsers.CAPE.community.AgentTesla",
     "CAPE-parsers.cape_parsers.CAPE.community.Amadey",
     "CAPE-parsers.cape_parsers.CAPE.community.Amatera",
@@ -86,7 +86,7 @@ CAPE_EXRACTORS = [
             10,
             None,
         ),
-        ("https://github.com/cccs-rs/CAPE-parsers", CAPE_EXRACTORS, 10, "assemblyline"),
+        ("https://github.com/cccs-rs/CAPE-parsers", CAPE_EXTRACTORS, 10, "assemblyline"),
     ],
     ids=(
         "configextractor-py/test_extractors",
