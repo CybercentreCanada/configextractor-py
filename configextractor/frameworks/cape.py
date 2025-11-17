@@ -47,7 +47,7 @@ def convert_to_MACO(cape_output: List[Dict[str, Any]]) -> Dict[str, Any]:
     # At a bare minimum, we'll preserve the original CAPE output before we begin parsing of normalized fields
     config = {}
     if "raw" not in cape_output:
-        # We'll assume the output is in it's raw form
+        # We'll assume the output is in its raw form
         config = {"other": {"raw": cape_output}}
     else:
         # We'll assume there's been some fields that have been normalized but also contains the raw output
@@ -76,7 +76,7 @@ def convert_to_MACO(cape_output: List[Dict[str, Any]]) -> Dict[str, Any]:
             config.setdefault(scheme, []).append(conn_data)
         elif scheme in ["tcp", "udp"]:
             conn_data.pop("path", None)  # TCP/UDP doesn't have a path component
-            # Map the host and port data to being affialiated with server
+            # Map the host and port data to being affiliated with server
             if "port" in conn_data:
                 conn_data["server_port"] = conn_data.pop("port")
             host = conn_data.pop("hostname")
@@ -216,7 +216,7 @@ if result:
         # There a multiple variable names across the CAPE extractors (both community and core)
         # where we can extract YARA rules from that target the extractor
         if hasattr(decoder, "detection_rule"):
-            # We're electing to priorize using the detection rules that CAPE uses in their project
+            # We're electing to prioritize using the detection rules that CAPE uses in their project
             yara_rules.append(getattr(decoder, "detection_rule"))
 
         if yara_rules:
