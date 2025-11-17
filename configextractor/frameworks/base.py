@@ -1,9 +1,10 @@
 """Base framework class."""
 
 from logging import Logger
-from typing import Dict, List, Union
+from typing import Dict, List, Optional
 
 from maco import utils, yara
+from pydantic import BaseModel
 
 
 class Extractor:
@@ -124,55 +125,55 @@ class Framework:
             "yara_rule": self.extract_yara(decoder),
         }
 
-    def extract_author(self, decoder: object) -> Union[str, None]:
+    def extract_author(self, decoder: object) -> Optional[str]:
         """Extract author from module.
 
         Args:
           decoder (object): Module to extract author from
 
         Returns:
-          (Union[str, None]): Author of the module if found, None otherwise
+          (Optional[str]): Author of the module if found, None otherwise
 
         """
         if self.author_attr_name and hasattr(decoder, self.author_attr_name):
             # Author information found
             return getattr(decoder, self.author_attr_name)
 
-    def extract_description(self, decoder: object) -> Union[str, None]:
+    def extract_description(self, decoder: object) -> Optional[str]:
         """Extracts description from module.
 
         Args:
           decoder (object): Module to extract description from
 
         Returns:
-          (Union[str, None]): Description of the module if found, None otherwise
+          (Optional[str]): Description of the module if found, None otherwise
         """
         if self.description_attr_name and hasattr(decoder, self.description_attr_name):
             # Extractor description found
             return getattr(decoder, self.description_attr_name)
 
-    def extract_sharing(self, decoder: object) -> Union[str, None]:
+    def extract_sharing(self, decoder: object) -> Optional[str]:
         """Extract sharing from module.
 
         Args:
           decoder (object): Module to extract sharing from
 
         Returns:
-          (Union[str, None]): Sharing classification of the module if found, None
+          (Optional[str]): Sharing classification of the module if found, None
 
         """
         if self.sharing_attr_name and hasattr(decoder, self.sharing_attr_name):
             # Sharing information found
             return getattr(decoder, self.sharing_attr_name)
 
-    def extract_yara(self, decoder: object) -> Union[str, None]:
+    def extract_yara(self, decoder: object) -> Optional[str]:
         """Extract YARA rule from module.
 
         Args:
           decoder (object): Module to extract YARA rule from
 
         Returns:
-          (Union[str, None]): YARA rule of the module if found, None otherwise
+          (Optional[str]): YARA rule of the module if found, None otherwise
 
         """
         if self.yara_attr_name and hasattr(decoder, self.yara_attr_name):
@@ -231,6 +232,7 @@ class Framework:
         )
 
         if not isinstance(output, dict):
-            output = output.model_dump(exclude_none=True, exclude_defaults=True)
+            if isinstance(output, BaseModel):
+                output = output.model_dump(exclude_none=True, exclude_defaults=True)
 
         return output
