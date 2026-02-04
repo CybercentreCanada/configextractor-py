@@ -121,7 +121,6 @@ class ConfigExtractor:
                             # Account for the possibility of multiple extractor classes within the same module
                             module_id = f"{module.__name__}.{member.__name__}"
 
-                        class_name = module_id.rsplit(".", 1)[1]
                         with open(module.__file__, "r") as fp:
                             if fw_name == "CAPE":
                                 # In the case of CAPE, we want to ensure the definition of `extract_config` is in the
@@ -130,6 +129,7 @@ class ConfigExtractor:
                                     # Definition of function is not in this file
                                     continue
                             else:
+                                class_name = module_id.rsplit(".", 1)[-1]
                                 if f"class {class_name}" not in fp.read():
                                     # Class found is not in this file
                                     continue
