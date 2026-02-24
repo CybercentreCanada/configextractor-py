@@ -50,6 +50,7 @@ CAPE_EXTRACTORS = [
     "CAPE-parsers.cape_parsers.CAPE.core.DoppelPaymer",
     "CAPE-parsers.cape_parsers.CAPE.core.DridexLoader",
     "CAPE-parsers.cape_parsers.CAPE.core.GuLoader",
+    "CAPE-parsers.cape_parsers.CAPE.core.HijackLoader",
     "CAPE-parsers.cape_parsers.CAPE.core.IcedID",
     "CAPE-parsers.cape_parsers.CAPE.core.IcedIDLoader",
     "CAPE-parsers.cape_parsers.CAPE.core.Latrodectus",
