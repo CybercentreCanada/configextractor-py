@@ -218,6 +218,8 @@ class Framework:
         Returns:
           (Dict[str, dict]): Results from the extractor
 
+        Raises:
+          ValueError: If any of the inputs contain unsafe characters that could lead to code injection
         """
         # Run in extractor with sample in virtual enviroment using the MACO utility
         module_name, extractor_class = extractor.id.rsplit(".", 1)
