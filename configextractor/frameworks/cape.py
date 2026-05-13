@@ -218,7 +218,7 @@ if result:
         # where we can extract YARA rules from that target the extractor
         if hasattr(decoder, "detection_rule"):
             # We're electing to prioritize using the detection rules that CAPE uses in their project
-            yara_rules.append(getattr(decoder, "detection_rule"))
+            yara_rules.append(decoder.detection_rule)
 
         if yara_rules:
             return "\n".join(yara_rules)

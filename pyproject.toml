@@ -20,6 +20,9 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 
+[project.optional-dependencies]
+test = ["pytest", "git-python", "Maco", "ruff==0.15.0"]
+
 [project.scripts]
 cx = "configextractor.cli:main"
 configextractor = "configextractor.cli:main"
