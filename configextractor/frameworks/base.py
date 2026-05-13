@@ -188,7 +188,7 @@ class Framework:
         Args:
           module (onject): Module to validate
         """
-        NotImplementedError()
+        raise NotImplementedError()
 
     def run(self, sample_path: str, parsers: Dict[Extractor, List[yara.Match]], timeout: int) -> List[dict]:
         """Run a series of modules.
@@ -203,7 +203,7 @@ class Framework:
         Returns:
           (List[dict]): List of results from the modules
         """
-        return NotImplementedError()
+        raise NotImplementedError()
 
     def run_in_venv(self, sample_path: str, extractor: Extractor) -> Dict[str, dict]:
         """Run an extractor in a virtual environment.
@@ -218,9 +218,23 @@ class Framework:
         Returns:
           (Dict[str, dict]): Results from the extractor
 
+        Raises:
+          ValueError: If any of the inputs contain unsafe characters that could lead to code injection
         """
         # Run in extractor with sample in virtual enviroment using the MACO utility
         module_name, extractor_class = extractor.id.rsplit(".", 1)
+
+        # Validate inputs to prevent code injection via .format() in venv script templates
+        _unsafe_chars = ('"', "'", "{", "}", "\\", "\n", "\r")
+        for value, label in [
+            (sample_path, "sample_path"),
+            (module_name, "module_name"),
+            (extractor_class, "extractor_class"),
+            (extractor.module_path, "module_path"),
+        ]:
+            if any(c in value for c in _unsafe_chars):
+                raise ValueError(f"Unsafe characters in {label}: {value!r}")
+
         output = utils.run_extractor(
             sample_path,
             module_name,

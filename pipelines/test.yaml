@@ -10,8 +10,6 @@ jobs:
   - job: run_test
     strategy:
       matrix:
-        Python3_10:
-          python.version: "3.10"
         Python3_11:
           python.version: "3.11"
         Python3_12:
@@ -25,20 +23,17 @@ jobs:
         inputs:
           versionSpec: "$(python.version)"
       - script: |
-          [ ! -d "$(pwd)/tests" ] && echo "No tests found" && exit
           pip install uv
-          [ -f $(pwd)/requirements.txt ] && sudo env "PATH=$PATH" uv pip install --system -U --no-cache-dir -r $(pwd)/requirements.txt
-          [ -f $(pwd)/tests/requirements.txt ] && sudo env "PATH=$PATH" uv pip install --system -U --no-cache-dir -r $(pwd)/tests/requirements.txt
+          sudo env "PATH=$PATH" uv pip install --system -U --no-cache-dir .[test]
           sudo rm -rf /tmp/* /var/lib/apt/lists/* ~/.cache/pip
 
         displayName: Setup environment
       - script: |
-          [ ! -d "$(pwd)/tests" ] && echo "No tests found" && exit
           export REPO_NAME=${BUILD_REPOSITORY_NAME##*/}
           python -m pytest -p no:cacheprovider --durations=10 -rsx -vv
         displayName: Test
 
       - script: |
-          pip install ruff
+          pip install .[test]
           ruff check
         displayName: Ruff check

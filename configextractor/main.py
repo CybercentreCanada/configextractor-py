@@ -18,6 +18,8 @@ from maco import utils, yara
 from configextractor.frameworks import CAPE, MACO, MWCP
 from configextractor.frameworks.base import Extractor, Framework
 
+IMPORT_TIMEOUT = 300  # 5 minutes
+
 
 def import_extractors(
     root_directory: str,
@@ -67,9 +69,9 @@ class ConfigExtractor:
         self,
         parsers_dirs: List[str],
         logger: Logger = None,
-        parser_blocklist: List[str] = [],
+        parser_blocklist: List[str] = None,
         create_venv: bool = False,
-        framework_classes: List[Framework] = [MACO, MWCP, CAPE],
+        framework_classes: List[Framework] = None,
         skip_install: bool = False,
     ) -> None:
         """Initialize ConfigExtractor.
@@ -85,6 +87,10 @@ class ConfigExtractor:
         Raises:
             Exception: If an exception occurs while importing extractors
         """
+        if parser_blocklist is None:
+            parser_blocklist = []
+        if framework_classes is None:
+            framework_classes = [MACO, MWCP, CAPE]
         if not logger:
             logger = getLogger()
         self.log = logger
@@ -169,7 +175,19 @@ class ConfigExtractor:
 
             # Wait for all the processes to terminate
             for p in processes:
-                p.join()
+                p.join(timeout=IMPORT_TIMEOUT)
+
+            # Terminate any import processes that exceeded the timeout
+            for p in processes:
+                if p.is_alive():
+                    logger.warning(f"Import process {p.pid} exceeded {IMPORT_TIMEOUT}s timeout, terminating...")
+                    p.terminate()
+                    p.join(5)
+                    if p.is_alive():
+                        logger.warning(f"Import process {p.pid} did not terminate gracefully, killing...")
+                        p.kill()
+                        p.join(1)
+                p.close()
 
             exceptions = list(exceptions)
             if exceptions:
@@ -237,18 +255,21 @@ class ConfigExtractor:
                     if value:
                         network_conn[part] = value
 
-    def run_parsers(self, sample: str, parser_blocklist: List[str] = [], timeout: int = 30) -> Dict[str, List[dict]]:
+    def run_parsers(self, sample: str, parser_blocklist: List[str] = None, timeout: int = 30) -> Dict[str, List[dict]]:
         """Run parsers on a sample.
 
         Args:
           sample (str): Path to the sample to run the parsers on
-          parser_blocklist (List[str]): List of regex patterns to block parsers. Defaults to [].
+          parser_blocklist (List[str]): List of regex patterns to block parsers. Defaults to None.
           timeout (int): How long to wait for each parser to complete. Defaults to 30 seconds.
 
         Returns:
             (Dict[str, List[dict]]): Results from the parsers across different frameworks
 
         """
+        if parser_blocklist is None:
+            parser_blocklist = []
+
         results = dict()
         parsers_to_run = defaultdict(lambda: defaultdict(list))
         block_regex = regex.compile("|".join(parser_blocklist)) if parser_blocklist else None
