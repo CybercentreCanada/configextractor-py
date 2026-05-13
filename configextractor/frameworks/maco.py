@@ -1,6 +1,7 @@
 """MACO Framework."""
 
 import json
+import os
 from logging import Logger
 from multiprocessing import Manager, Process
 from typing import Dict, List, Union
@@ -77,18 +78,34 @@ class MACO(Framework):
                     self.log.error(f"{extractor.id}: {e}")
                 results.append(result)
 
-            processes = []
-            for extractor, yara_matches in parsers.items():
-                p = Process(
-                    target=run_extractor,
-                    args=(extractor, yara_matches, results),
-                )
-                p.start()
-                processes.append(p)
+            max_procs = os.cpu_count() or 4
+            all_parsers = list(parsers.items())
+            for batch_start in range(0, len(all_parsers), max_procs):
+                batch = all_parsers[batch_start:batch_start + max_procs]
+                batch_processes = []
+                for extractor, yara_matches in batch:
+                    p = Process(
+                        target=run_extractor,
+                        args=(extractor, yara_matches, results),
+                    )
+                    p.start()
+                    batch_processes.append(p)
 
-            # Wait for all processes to finish
-            for p in processes:
-                p.join(timeout)
+                # Wait for batch to finish
+                for p in batch_processes:
+                    p.join(timeout)
+
+                # Terminate any processes that are still running after the timeout
+                for p in batch_processes:
+                    if p.is_alive():
+                        self.log.warning(f"Parser process {p.pid} exceeded timeout of {timeout}s, terminating...")
+                        p.terminate()
+                        p.join(5)
+                        if p.is_alive():
+                            self.log.warning(f"Parser process {p.pid} did not terminate gracefully, killing...")
+                            p.kill()
+                            p.join(1)
+                    p.close()
 
             return list(results)
 
