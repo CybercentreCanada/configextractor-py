@@ -84,6 +84,7 @@ class ConfigExtractor:
           create_venv (bool): Create venvs whenever you encounter a requirements.txt file during scanning
           framework_classes (List[Framework]): List of framework classes to use
           skip_install (bool): Skip installing dependencies for extractors
+          import_timeout (int): The timeout applied to the extractor import subprocess
 
         Raises:
             Exception: If an exception occurs while importing extractors
