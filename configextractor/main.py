@@ -73,6 +73,7 @@ class ConfigExtractor:
         create_venv: bool = False,
         framework_classes: List[Framework] = None,
         skip_install: bool = False,
+        import_timeout: int = None,
     ) -> None:
         """Initialize ConfigExtractor.
 
@@ -83,6 +84,7 @@ class ConfigExtractor:
           create_venv (bool): Create venvs whenever you encounter a requirements.txt file during scanning
           framework_classes (List[Framework]): List of framework classes to use
           skip_install (bool): Skip installing dependencies for extractors
+          import_timeout (int): The timeout applied to the extractor import subprocess
 
         Raises:
             Exception: If an exception occurs while importing extractors
@@ -91,6 +93,9 @@ class ConfigExtractor:
             parser_blocklist = []
         if framework_classes is None:
             framework_classes = [MACO, MWCP, CAPE]
+        if import_timeout is None:
+            # Use global default
+            import_timeout = IMPORT_TIMEOUT
         if not logger:
             logger = getLogger()
         self.log = logger
@@ -175,12 +180,12 @@ class ConfigExtractor:
 
             # Wait for all the processes to terminate
             for p in processes:
-                p.join(timeout=IMPORT_TIMEOUT)
+                p.join(timeout=import_timeout)
 
             # Terminate any import processes that exceeded the timeout
             for p in processes:
                 if p.is_alive():
-                    logger.warning(f"Import process {p.pid} exceeded {IMPORT_TIMEOUT}s timeout, terminating...")
+                    logger.warning(f"Import process {p.pid} exceeded {import_timeout}s timeout, terminating...")
                     p.terminate()
                     p.join(5)
                     if p.is_alive():
