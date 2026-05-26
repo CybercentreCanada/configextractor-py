@@ -23,7 +23,7 @@ IMPORT_TIMEOUT = 300  # 5 minutes
 
 def import_extractors(
     root_directory: str,
-    scanner: yara.Rules,
+    scanner_source: str,
     extractor_module_callback: Callable[[ModuleType, str], None],
     logger: Logger,
     create_venv: bool,
@@ -34,7 +34,7 @@ def import_extractors(
 
     Args:
       root_directory (str): Root directory to import extractors from
-      scanner (yara.Rules): YARA scanner to use to find extractors from a certain framework
+      scanner_source (str): Scanner YARA sources to find extractors from a certain framework
       extractor_module_callback (Callable[[ModuleType, str], None]):
         Callback function to call when an possible extractor module is found
       logger (Logger): Logger to use
@@ -46,7 +46,7 @@ def import_extractors(
         utils.import_extractors(
             extractor_module_callback=extractor_module_callback,
             root_directory=root_directory,
-            scanner=scanner,
+            scanner_source=scanner_source,
             logger=logger,
             create_venv=create_venv,
             skip_install=skip_install,
@@ -105,7 +105,7 @@ class ConfigExtractor:
 
         self.parsers: Dict[str, Extractor] = dict()
         block_regex = regex.compile("|".join(parser_blocklist)) if parser_blocklist else None
-        scanner = yara.compile("\n".join([fw_class.yara_rule for fw_class in self.FRAMEWORK_LIBRARY_MAPPING.values()]))
+        scanner_source = "\n".join([fw_class.yara_rule for fw_class in self.FRAMEWORK_LIBRARY_MAPPING.values()])
         with Manager() as manager:
             parsers = manager.dict()
             exceptions = manager.list()
@@ -167,7 +167,7 @@ class ConfigExtractor:
                     target=import_extractors,
                     args=(
                         parsers_dir,
-                        scanner,
+                        scanner_source,
                         extractor_module_callback,
                         logger,
                         create_venv,
