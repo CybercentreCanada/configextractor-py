@@ -50,6 +50,7 @@ def import_extractors(
             logger=logger,
             create_venv=create_venv,
             skip_install=skip_install,
+            enable_venv_cache=True,
         )
     except Exception:
         exceptions.append(format_exc())
