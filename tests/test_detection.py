@@ -34,6 +34,7 @@ CAPE_EXTRACTORS = [
     "CAPE-parsers.cape_parsers.CAPE.community.Snake",
     "CAPE-parsers.cape_parsers.CAPE.community.SparkRAT",
     "CAPE-parsers.cape_parsers.CAPE.community.Stealc",
+    "CAPE-parsers.cape_parsers.CAPE.community.Vidar",
     "CAPE-parsers.cape_parsers.CAPE.community.VenomRAT",
     "CAPE-parsers.cape_parsers.CAPE.community.WinosStager",
     "CAPE-parsers.cape_parsers.CAPE.community.XWorm",
