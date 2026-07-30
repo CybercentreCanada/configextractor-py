@@ -47,8 +47,19 @@ from configextractor.main import ConfigExtractor
     is_flag=True,
     default=False,
 )
+@click.option(
+    "--disable_venv_cache",
+    help="Disable caching when constructing virtual environments",
+    is_flag=True,
+    default=False,
+)
 def main(
-    parsers_paths: List[str], sample_paths: List[str], block: List[str], verbosity: str, create_venv: bool
+    parsers_paths: List[str],
+    sample_paths: List[str],
+    block: List[str],
+    verbosity: str,
+    create_venv: bool,
+    disable_venv_cache: bool,
 ) -> None:
     """Run ConfigExtractor.
 
@@ -62,7 +73,13 @@ def main(
     logger = logging.getLogger("cx")
     logger.setLevel(verbosity)
     logger.addHandler(logging.StreamHandler())
-    cx = ConfigExtractor(parsers_paths, parser_blocklist=block, logger=logger, create_venv=create_venv)
+    cx = ConfigExtractor(
+        parsers_paths,
+        parser_blocklist=block,
+        logger=logger,
+        create_venv=create_venv,
+        enable_venv_cache=not disable_venv_cache,
+    )
 
     # Check if path given is a directory or a file
     results = dict()
