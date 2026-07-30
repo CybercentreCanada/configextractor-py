@@ -69,6 +69,7 @@ def main(
       block (List[str]): List of regex patterns to block parsers
       verbosity (str): Logging verbosity
       create_venv (bool): Create venvs whenever you encounter a requirements.txt file during scanning
+      disable_venv_cache (bool): Disable caching when constructing virtual environments
     """
     logger = logging.getLogger("cx")
     logger.setLevel(verbosity)

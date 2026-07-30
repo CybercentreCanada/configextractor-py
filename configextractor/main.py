@@ -40,6 +40,7 @@ def import_extractors(
         Callback function to call when an possible extractor module is found
       logger (Logger): Logger to use
       create_venv (bool): Whether to create a virtual environment for the extractor
+      enable_venv_cache (bool): Whether to enable caching when constructing virtual environments
       skip_install (bool): Whether to skip installing dependencies
       exceptions (ListProxy): List to store exceptions in
     """
@@ -85,6 +86,7 @@ class ConfigExtractor:
           logger (Logger): Logger to use
           parser_blocklist (List[str]): List of regex patterns to block parsers
           create_venv (bool): Create venvs whenever you encounter a requirements.txt file during scanning
+          enable_venv_cache (bool): Enable caching when constructing virtual environments
           framework_classes (List[Framework]): List of framework classes to use
           skip_install (bool): Skip installing dependencies for extractors
           import_timeout (int): The timeout applied to the extractor import subprocess
