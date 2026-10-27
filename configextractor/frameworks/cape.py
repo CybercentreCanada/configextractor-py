@@ -4,7 +4,7 @@ import inspect
 import os
 import re as regex
 from logging import Logger
-from multiprocessing import Manager, Process
+from multiprocess import Manager, Process
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
@@ -90,7 +90,7 @@ def convert_to_MACO(cape_output: List[Dict[str, Any]]) -> Dict[str, Any]:
             conn_data.pop("path", None)  # SMTP doesn't have a path component
             # Check for anything to populate the "mail_to" field in the raw data
             mail_to = []
-            for term in ['EmailTo', 'To Address']:
+            for term in ["EmailTo", "To Address"]:
                 data = config["other"]["raw"].get(term)
                 if isinstance(data, str):
                     mail_to.append(data)
@@ -102,7 +102,7 @@ def convert_to_MACO(cape_output: List[Dict[str, Any]]) -> Dict[str, Any]:
 
             # Check for anything to populate the "mail_from" field in the raw data
             mail_from = None
-            for term in ['From Address']:
+            for term in ["From Address"]:
                 mail_from = config["other"]["raw"].get(term)
 
             if mail_from:
@@ -298,7 +298,7 @@ if result:
             max_procs = os.cpu_count() or 4
             all_parsers = list(parsers.items())
             for batch_start in range(0, len(all_parsers), max_procs):
-                batch = all_parsers[batch_start:batch_start + max_procs]
+                batch = all_parsers[batch_start : batch_start + max_procs]
                 batch_processes = []
                 for extractor, yara_matches in batch:
                     p = Process(

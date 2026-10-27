@@ -70,6 +70,9 @@ CAPE_EXTRACTORS = [
     "CAPE-parsers.cape_parsers.CAPE.core.Strrat",
     "CAPE-parsers.cape_parsers.CAPE.core.WarzoneRAT",
     "CAPE-parsers.cape_parsers.CAPE.core.Zloader",
+    "CAPE-parsers.cape_parsers.CAPE.core.DocConnect",
+    "CAPE-parsers.cape_parsers.CAPE.core.Remus",
+    "CAPE-parsers.cape_parsers.CAPE.core.AxolotlLoader",
 ]
 
 

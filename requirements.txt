@@ -4,3 +4,4 @@ maco >= 1.3.0
 mwcfg
 mwcp >= 3.16.1
 setuptools
+multiprocess
