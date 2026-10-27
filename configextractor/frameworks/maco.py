@@ -3,7 +3,7 @@
 import json
 import os
 from logging import Logger
-from multiprocessing import Manager, Process
+from multiprocess import Manager, Process
 from typing import Dict, List, Union
 
 from maco.exceptions import AnalysisAbortedException
@@ -81,7 +81,7 @@ class MACO(Framework):
             max_procs = os.cpu_count() or 4
             all_parsers = list(parsers.items())
             for batch_start in range(0, len(all_parsers), max_procs):
-                batch = all_parsers[batch_start:batch_start + max_procs]
+                batch = all_parsers[batch_start : batch_start + max_procs]
                 batch_processes = []
                 for extractor, yara_matches in batch:
                     p = Process(

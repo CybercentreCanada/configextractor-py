@@ -5,8 +5,8 @@ import re as regex
 import tempfile
 from collections import defaultdict
 from logging import Logger, getLogger
-from multiprocessing import Manager, Process
-from multiprocessing.managers import ListProxy
+from multiprocess import Manager, Process
+from multiprocess.managers import ListProxy
 from traceback import format_exc
 from types import ModuleType
 from typing import Callable, Dict, List
