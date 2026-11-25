@@ -4,16 +4,17 @@ import inspect
 import re as regex
 import tempfile
 from collections import defaultdict
+from contextlib import contextmanager
 from logging import Logger, getLogger
-from multiprocess import Manager, Process
-from multiprocess.managers import ListProxy
 from traceback import format_exc
 from types import ModuleType
-from typing import Callable, Dict, List
+from typing import Callable, Dict, Iterator, List, Tuple
 from urllib.parse import urlparse
 
 import cart
 from maco import utils, yara
+from multiprocess import Manager, Process
+from multiprocess.managers import ListProxy
 
 from configextractor.frameworks import CAPE, MACO, MWCP
 from configextractor.frameworks.base import Extractor, Framework
@@ -266,22 +267,26 @@ class ConfigExtractor:
                     if value:
                         network_conn[part] = value
 
-    def run_parsers(self, sample: str, parser_blocklist: List[str] = None, timeout: int = 30) -> Dict[str, List[dict]]:
-        """Run parsers on a sample.
+    @contextmanager
+    def _prepare_run(
+        self, sample: str, parser_blocklist: List[str] = None
+    ) -> Iterator[Tuple[str, Dict[str, Dict[Extractor, List[yara.Match]]]]]:
+        """Prepare a sample for analysis and determine which parsers should run on it.
+
+        The prepared copy of the sample is deleted when the context exits.
 
         Args:
           sample (str): Path to the sample to run the parsers on
           parser_blocklist (List[str]): List of regex patterns to block parsers. Defaults to None.
-          timeout (int): How long to wait for each parser to complete. Defaults to 30 seconds.
 
-        Returns:
-            (Dict[str, List[dict]]): Results from the parsers across different frameworks
+        Yields:
+            (Tuple[str, Dict[str, Dict[Extractor, List[yara.Match]]]]): Path to the staged sample and the parsers to
+              run on it, grouped by framework
 
         """
         if parser_blocklist is None:
             parser_blocklist = []
 
-        results = dict()
         parsers_to_run = defaultdict(lambda: defaultdict(list))
         block_regex = regex.compile("|".join(parser_blocklist)) if parser_blocklist else None
 
@@ -315,15 +320,59 @@ class ConfigExtractor:
                     continue
                 parsers_to_run[parser.framework][parser].extend([])
 
+            yield sample_copy.name, parsers_to_run
+
+    def run_parsers(self, sample: str, parser_blocklist: List[str] = None, timeout: int = 30) -> Dict[str, List[dict]]:
+        """Run parsers on a sample.
+
+        Args:
+          sample (str): Path to the sample to run the parsers on
+          parser_blocklist (List[str]): List of regex patterns to block parsers. Defaults to None.
+          timeout (int): How long to wait for each parser to complete. Defaults to 30 seconds.
+
+        Returns:
+            (Dict[str, List[dict]]): Results from the parsers across different frameworks
+
+        """
+        results = dict()
+
+        with self._prepare_run(sample, parser_blocklist) as (sample_path, parsers_to_run):
             for framework, parser_list in parsers_to_run.items():
                 if parser_list:
                     self.log.debug(
                         f"Running the following under the {framework} framework with YARA: "
                         + f"{[p.id for p in parser_list]}"
                     )
-                    result = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(sample_copy.name, parser_list, timeout)
+                    result = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(sample_path, parser_list, timeout)
                     self.finalize(result)
                     if result:
                         results[framework] = result
 
         return results
+
+    def iter_parsers(
+        self, sample: str, parser_blocklist: List[str] = None, timeout: int = 30
+    ) -> Iterator[Tuple[str, dict]]:
+        """Run parsers on a sample, yielding each result as soon as its parser completes.
+
+        Parsers run one at a time, so breaking out of the loop stops any remaining parsers from running.
+
+        Args:
+          sample (str): Path to the sample to run the parsers on
+          parser_blocklist (List[str]): List of regex patterns to block parsers. Defaults to None.
+          timeout (int): How long to wait for each parser to complete. Defaults to 30 seconds.
+
+        Yields:
+            (Tuple[str, dict]): The framework name and a single parser result
+
+        """
+        with self._prepare_run(sample, parser_blocklist) as (sample_path, parsers_to_run):
+            for framework, parser_list in parsers_to_run.items():
+                if parser_list:
+                    self.log.debug(
+                        f"Running the following under the {framework} framework with YARA: "
+                        + f"{[p.id for p in parser_list]}"
+                    )
+                    for result in self.FRAMEWORK_LIBRARY_MAPPING[framework].iter_run(sample_path, parser_list, timeout):
+                        self.finalize([result])
+                        yield framework, result

@@ -1,7 +1,7 @@
 """Base framework class."""
 
 from logging import Logger
-from typing import Dict, List, Optional
+from typing import Dict, Iterator, List, Optional
 
 from maco import utils, yara
 from pydantic import BaseModel
@@ -205,6 +205,20 @@ class Framework:
         """
         raise NotImplementedError()
 
+    def iter_run(self, sample_path: str, parsers: Dict[Extractor, List[yara.Match]], timeout: int) -> Iterator[dict]:
+        """Run a series of modules one at a time, yielding each result as soon as its module completes.
+
+        Args:
+          sample_path (str): Path to the sample to run the modules on
+          parsers (Dict[Extractor, List[yara.Match]]): Extractor modules and their YARA matches
+          timeout (int): How long to wait for each module to complete
+
+        Yields:
+          (dict): A single result from a module
+        """
+        for extractor, yara_matches in parsers.items():
+            yield from self.run(sample_path, {extractor: yara_matches}, timeout)
+
     def run_in_venv(self, sample_path: str, extractor: Extractor) -> Dict[str, dict]:
         """Run an extractor in a virtual environment.
 
@@ -245,8 +259,7 @@ class Framework:
             json_decoder=None,
         )
 
-        if not isinstance(output, dict):
-            if isinstance(output, BaseModel):
-                output = output.model_dump(exclude_none=True, exclude_defaults=True)
+        if not isinstance(output, dict) and isinstance(output, BaseModel):
+            output = output.model_dump(exclude_none=True, exclude_defaults=True)
 
         return output
