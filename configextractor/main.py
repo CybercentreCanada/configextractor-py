@@ -315,15 +315,25 @@ class ConfigExtractor:
                     continue
                 parsers_to_run[parser.framework][parser].extend([])
 
-            for framework, parser_list in parsers_to_run.items():
-                if parser_list:
-                    self.log.debug(
-                        f"Running the following under the {framework} framework with YARA: "
-                        + f"{[p.id for p in parser_list]}"
-                    )
-                    result = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(sample_copy.name, parser_list, timeout)
-                    self.finalize(result)
-                    if result:
-                        results[framework] = result
+            def _run_parsers(framework, parser_list):
+                result = self.FRAMEWORK_LIBRARY_MAPPING[framework].run(sample_copy.name, parser_list, timeout)
+                self.finalize(result)
+                if result:
+                    results[framework] = result
 
-        return results
+            with Manager() as manager:
+                results = manager.dict()
+
+                # Create a process for each framework
+                processes = [Process(target=_run_parsers, args=(framework, parser_list))
+                             for framework, parser_list in parsers_to_run.items() if parser_list]
+
+                # Start all processes
+                for p in processes:
+                    p.start()
+
+                # Wait for all processes to finish
+                for p in processes:
+                    p.join(timeout=timeout)
+
+                return dict(results)
